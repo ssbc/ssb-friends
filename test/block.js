@@ -14,6 +14,13 @@ tape('block rules', function (t) {
 })
 
 
+//tape('compare', function (t) {
+//  t.equal(block.compare([1, 2], [undefined, 2]), -1)
+//  t.equal(block.compare([undefined, 2], [1, 2]), 1)
+//  t.end()
+//
+//})
+
 tape('block reduces', function (t) {
   t.deepEqual(block.reduce(null, [1], true), [2, undefined])
   t.deepEqual(block.reduce([2], [2], true), [2, undefined])
@@ -76,4 +83,53 @@ tape('networks', function (t) {
   t.end()
 
 })
+
+tape('networks2', function (t) {
+  var g = {
+    a: {b: true},
+    c: {a: true},
+  }
+
+  var r1 = F.reachable(g, 'c', block)
+  t.deepEqual(r1.b, [2, undefined])
+
+  g.a.b = false
+  var r2 = F.reachable(g, 'c', block)
+  t.deepEqual(r2.b, [undefined, 2])
+
+
+  g.c.b = true
+  var r3 = F.reachable(g, 'c', block)
+  console.log(r3)
+  t.deepEqual(r3.b, [1, 2])
+
+  t.deepEqual(F.diff(r2, r3, block), {b: [1,2]})
+
+//  console.log(, )
+//  var u
+//  var r1 = F.reachable(g, 'a', block)
+//  t.deepEqual(r1,
+//  {
+//    a: [0], b: [1, u], c: [1,u], d:[2,2]
+//  })
+//
+//  //but if c says they are alright, that is different.
+//  g.c.e = true
+//
+//  var r2 = F.reachable(g, 'a', block)
+//  t.deepEqual(r2,
+//  {
+//    a: [0, u], b: [1, u], c: [1,u], d:[2,2], e: [2,u]
+//  })
+//
+//  t.deepEqual(F.diff(r1, r2, block), {
+//    e: [2,u]
+//  })
+//
+  t.end()
+
+})
+
+
+
 
