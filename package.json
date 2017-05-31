@@ -1,7 +1,7 @@
 {
   "name": "ssb-friends",
   "description": "",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "homepage": "https://github.com/dominictarr/ssb-friends",
   "repository": {
     "type": "git",
@@ -19,4 +19,3 @@
   "author": "'Dominic Tarr' <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT"
 }
-
