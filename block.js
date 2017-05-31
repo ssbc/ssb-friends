@@ -1,9 +1,18 @@
 
 exports.initial = [0]
 
-exports.compare = function (a, b) {
-  console.log(a,b)
-  return b[0] - a[0]
+function isEqual (a,b) {
+  return a[0] == b[0] && a[1] == b[1]
+}
+
+function isFollowing (a) {
+  if(a[1] == null) return a[0] != null
+  if(a[0] == null) return false
+  return a[0] < a[1]
+}
+
+exports.update = function (then, now) {
+  return isFollowing(then) != isFollowing(now)
 }
 
 function min (a, b) {
@@ -45,6 +54,5 @@ exports.isWanted = function (target) {
   if(target[1] == null) return target[0] >= 0
   return target[0] <= target[1]
 }
-
 
 

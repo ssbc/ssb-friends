@@ -19,6 +19,9 @@ var defaultOpts = {
   compare: function compare (a, b) {
     return a < b ? -1 : a > b ? 1 : 0
   },
+  update: function (then, now) {
+    return then == null && now != null || then > now
+  },
   reduce: function reduce (target, source, value) {
     return min(target,
         value === false ? ~source
@@ -34,7 +37,6 @@ var defaultOpts = {
 
 
 exports.reachable = function (graph, start, opts) {
-
   if(!opts)
     opts = defaultOpts
 
@@ -63,13 +65,13 @@ exports.diff = function (then, now, opts) {
     opts = defaultOpts
 
   var added = {}
-  for(var k in now)
-    if(then[k] == null || opts.compare(now[k], then[k]) < 0)
+  for(var k in now) {
+    if(then[k] == null || opts.update(then[k], now[k]))
       added[k] = now[k]
+  }
 
   for(var k in then) {
     if(now[k] == null) added[k] = null
   }
   return added
 }
-

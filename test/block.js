@@ -3,6 +3,7 @@ var tape = require('tape')
 
 var block = require('../block')
 var F = require('../')
+
 tape('block rules', function (t) {
 
   t.equal(block.expand([0,1]), true, 'expand ourselves!')
@@ -12,7 +13,19 @@ tape('block rules', function (t) {
 
   t.end()
 })
+var u
+tape('update?', function (t) {
+  t.equal(block.update([u, 1], [2,1]), false, 'unfollowed directly')
+  t.equal(block.update([u, 2], [1,2]), true)
+  t.equal(block.update([2, u], [u,2]), true)
+  t.equal(block.update([u, 1], [1,u]), true, 'started follownig')
+  t.equal(block.update([u, 1], [u,2]), false)
+  t.equal(block.update([0], [0, u]), false)
+  t.equal(block.update([0], [0, 2]), false)
 
+  t.end()
+
+})
 
 //tape('compare', function (t) {
 //  t.equal(block.compare([1, 2], [undefined, 2]), -1)
@@ -129,6 +142,10 @@ tape('networks2', function (t) {
   t.end()
 
 })
+
+
+
+
 
 
 
