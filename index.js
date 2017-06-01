@@ -2,14 +2,9 @@ var G           = require('graphreduce')
 var Reduce      = require('flumeview-reduce')
 var pull        = require('pull-stream')
 var FlatMap     = require('pull-flatmap')
-//var mlib        = require('ssb-msgs')
-//var pushable    = require('pull-pushable')
-//var mdm         = require('mdmanifest')
-//var valid       = require('../lib/validators')
-//var apidoc      = require('../lib/apidocs').friends
 var ref         = require('ssb-ref')
 var Obv         = require('obv')
-
+var pCont       = require('pull-cont/source')
 var F           = require('./alg')
 var block       = require('./block')
 
@@ -40,8 +35,6 @@ exports.manifest = {
 //mdm.manifest(apidoc)
 
 exports.init = function (sbot, config) {
-  var post = Obv()
-  post.set({})
   var index = sbot._flumeUse('friends', Reduce(2, function (g, rel) {
     if(!g) g = {}
     G.addEdge(g, rel.from, rel.to, rel.value)
@@ -79,7 +72,7 @@ exports.init = function (sbot, config) {
           out.push(meta ? {id: to, hops: hops} : to)
         }
 
-        var out = [], g = post.value
+        var out = [], g = index.value.value
 
         //the edge has already been added to g
         if(!reachable) {
@@ -104,54 +97,49 @@ exports.init = function (sbot, config) {
     )
   }
 
-
   //BLOCKING
-
-  var g = {}
-
-  post(function (_g) {
-    g = _g
-  })
-
-  function isBlocked (_opts) {
-    var opts
-    if(!g) return //only possible briefly at startup
-    if('string' === typeof _opts)
-      return g[sbot.id] ? g[sbot.id][_opts] === false : false
-    return g[_opts.source] ? g[_opts.source][_opts.dest] === false : false
-  }
 
   //should things like createHistoryStream instead
   //call a block prehook?
   sbot.createHistoryStream.hook(function (fn, args) {
     var opts = args[0], id = this.id
     //reminder: this.id is the remote caller.
-    if(opts.id !== this.id && isBlocked({source: opts.id, dest: id})) {
-      return function (abort, cb) {
-        //just give them the cold shoulder
-      }
-//      return fn({id: null, sequence: 0})
-    } else
-      return pull(
-        fn.apply(this, args),
-        //break off this feed if they suddenly block
-        //the recipient.
-        pull.take(function (msg) {
-          //handle when createHistoryStream is called with keys: true
-          if(!msg.content && msg.value.content)
-            msg = msg.value
-          if(msg.content.type !== 'contact') return true
-          return !(
-            (msg.content.flagged || msg.content.blocking) &&
-            msg.content.contact === id
-          )
-        })
-      )
+    var self = this
+    return pCont(function (cb) {
+      index.since.once(function () {
+        var g = index.value.value
+        if(g && opts.id !== id && g[opts.id] && g[opts.id][id] === false) {
+          cb(null, function (abort, cb) {
+            //just give them the cold shoulder
+          })
+        } else
+          cb(null, pull(
+            fn.apply(self, args),
+            //break off this feed if they suddenly block
+            //the recipient.
+            pull.take(function (msg) {
+              //handle when createHistoryStream is called with keys: true
+              if(!msg.content && msg.value.content)
+                msg = msg.value
+              if(msg.content.type !== 'contact') return true
+              return !(
+                (msg.content.flagged || msg.content.blocking) &&
+                msg.content.contact === id
+              )
+            })
+          ))
+      })
+    })
   })
 
   sbot.auth.hook(function (fn, args) {
-    if(isBlocked(args[0])) args[1](new Error('client is blocked'))
-    else return fn.apply(this, args)
+    var self = this
+    index.since.once(function () {
+      var g = index.value.value
+      if(g && g[sbot.id][args[0]] === false)
+        args[1](new Error('client is blocked'))
+      else fn.apply(self, args)
+    })
   })
 
   // ^^ BLOCKING
@@ -173,18 +161,9 @@ exports.init = function (sbot, config) {
         sbot.replicate.request(data.id, false)
     })
   )
-  //
-
-
-  index.since(function () {
-    //it looks async but this will always be sync after loading
-    index.get(null, function (_, v) {
-      post.set(v)
-    })
-  })
 
   return {
-    post: post,
+    post: index.value,
     get: function (opts, cb) {
       index.get(opts, cb)
     },
@@ -204,6 +183,7 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
 
 
 
