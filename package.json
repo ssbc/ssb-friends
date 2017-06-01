@@ -11,6 +11,7 @@
     "flumeview-reduce": "^1.0.4",
     "graphreduce": "^3.0.3",
     "obv": "0.0.1",
+    "pull-cont": "^0.1.1",
     "pull-flatmap": "0.0.1",
     "pull-stream": "^3.6.0",
     "ssb-ref": "^2.7.1"
