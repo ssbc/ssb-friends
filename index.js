@@ -157,6 +157,9 @@ exports.init = function (sbot, config) {
   // ^^ BLOCKING
 
   // REPLICATION
+  if(!sbot.replicate)
+    throw new Error('ssb-friends expects a replicate plugin to be available')
+
   pull(
     createFriendStream({live: true, meta: true}),
     // filter out duplicates, and also keep track of what we expect to receive
@@ -201,6 +204,8 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
 
 
 
