@@ -136,7 +136,6 @@ exports.init = function (sbot, config) {
     var self = this
     index.since.once(function () {
       var g = index.value.value
-      console.log(g)
       if(g && g[sbot.id] && g[sbot.id][args[0]] === false)
         args[1](new Error('client is blocked'))
       else fn.apply(self, args)
@@ -184,6 +183,7 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
 
 
 
