@@ -2,7 +2,7 @@
 var tape = require('tape')
 
 var block = require('../block')
-var F = require('../')
+var F = require('../alg')
 
 tape('block rules', function (t) {
 

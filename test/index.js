@@ -1,5 +1,5 @@
 
-var F = require('../')
+var F = require('../alg')
 var tape = require('tape')
 
 tape('simple', function (t) {

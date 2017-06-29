@@ -14,7 +14,7 @@ var g = {
 
 var tape = require('tape')
 
-var F = require('../')
+var F = require('../alg')
 var block = require('../block')
 
 tape('simple', function (t) {
