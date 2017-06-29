@@ -35,6 +35,7 @@ exports.manifest = {
 //mdm.manifest(apidoc)
 
 exports.init = function (sbot, config) {
+  var g = {}
   var index = sbot._flumeUse('friends', Reduce(2, function (g, rel) {
     if(!g) g = {}
     G.addEdge(g, rel.from, rel.to, rel.value)
@@ -52,7 +53,7 @@ exports.init = function (sbot, config) {
         value: tristate
       }
     }
-  }))
+  }, null, g))
 
   function createFriendStream (opts) {
     opts = opts || {}
@@ -62,6 +63,7 @@ exports.init = function (sbot, config) {
     var reachable
     //mabye this could be rewritten cleaner with
     //index.value (an observable) instead?
+
     return pull(
       index.stream(opts),
       FlatMap(function (v) {
@@ -77,11 +79,13 @@ exports.init = function (sbot, config) {
         //the edge has already been added to g
         if(!reachable) {
           reachable = F.reachable(g, start, block)
+          reachable[sbot.id] = [0, undefined]
           for(var k in reachable)
             if(block.isWanted(reachable[k]))
               push(k, reachable[k][0])
         } else {
           var _reachable = F.reachable(g, start, block)
+          _reachable[sbot.id] = [0, undefined]
           var patch = F.diff(reachable, _reachable, block)
           for(var k in patch) {
             if(patch[k] == null || patch[k][0] == null || patch[k][0] > patch[k][1])
@@ -183,6 +187,8 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
 
 
 
