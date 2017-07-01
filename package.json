@@ -8,7 +8,7 @@
     "url": "git://github.com/dominictarr/ssb-friends.git"
   },
   "dependencies": {
-    "flumeview-reduce": "^1.2.1",
+    "flumeview-reduce": "^1.3.0",
     "graphreduce": "^3.0.3",
     "obv": "0.0.1",
     "pull-cont": "^0.1.1",
