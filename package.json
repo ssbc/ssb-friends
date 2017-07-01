@@ -1,7 +1,7 @@
 {
   "name": "ssb-friends",
   "description": "",
-  "version": "2.0.5",
+  "version": "2.1.0",
   "homepage": "https://github.com/dominictarr/ssb-friends",
   "repository": {
     "type": "git",
