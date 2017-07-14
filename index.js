@@ -169,7 +169,16 @@ exports.init = function (sbot, config) {
   return {
     post: index.value,
     get: function (opts, cb) {
-      index.get(opts, cb)
+      index.get(function (err, value) {
+        if(err) return cb(err)
+        //opts is used like this in ssb-ws
+        if(opts.source) {
+          value = value[opts.source]
+          if(value && opts.dest)
+            value = value[opts.dest]
+        }
+        cb(null, value)
+      })
     },
 
     createFriendStream: createFriendStream,
@@ -187,6 +196,8 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
 
 
 
