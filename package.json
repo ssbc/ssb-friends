@@ -2,10 +2,10 @@
   "name": "ssb-friends",
   "description": "",
   "version": "2.2.1",
-  "homepage": "https://github.com/dominictarr/ssb-friends",
+  "homepage": "https://github.com/ssbc/ssb-friends",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dominictarr/ssb-friends.git"
+    "url": "git://github.com/ssbc/ssb-friends.git"
   },
   "dependencies": {
     "flumeview-reduce": "^1.3.0",
