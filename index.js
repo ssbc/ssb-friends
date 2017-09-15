@@ -29,6 +29,7 @@ exports.version = '1.0.0'
 exports.manifest = {
   get: 'async',
   createFriendStream: 'source',
+  stream: 'source',
   hops: 'async'
 }
 
@@ -184,6 +185,7 @@ exports.init = function (sbot, config) {
     },
 
     createFriendStream: createFriendStream,
+    stream: index.stream,
     //legacy, debugging
     hops: function (opts, cb) {
       if(isFunction(opts))
