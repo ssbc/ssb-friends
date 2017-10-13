@@ -27,10 +27,21 @@ tape('empty database follow self', function (t) {
 var gen = require('ssb-generate')
 
 tape('live follows works', function (t) {
-  var a = []
+  var a = [], b = [], c = []
+
   pull(
     a_bot.friends.createFriendStream({live: true, meta: true}),
     pull.drain(function (m) { a.push(m) })
+  )
+
+  pull(
+    a_bot.friends.createFriendStream({live: true, meta: true, hops: 1}),
+    pull.drain(function (m) { b.push(m) })
+  )
+
+  pull(
+    a_bot.friends.createFriendStream({live: true, meta: true, hops: 2}),
+    pull.drain(function (m) { c.push(m) })
   )
 
 
@@ -38,11 +49,14 @@ tape('live follows works', function (t) {
     console.log(peers.map(function (e) { return e.id }))
     console.log(a)
     t.deepEqual(a.length, peers.length)
+    b.forEach(function (e) { t.ok(e.hops <= 1, 'b '+e.hops+' hops <= 1') })
+    c.forEach(function (e) { t.ok(e.hops <= 2, 'c '+e.hops+' hops <= 2') })
+    t.ok(a.length >= b.length)
+    t.ok(c.length >= b.length)
+
     t.end()
     a_bot.close()
   })
 
 })
-
-
 
