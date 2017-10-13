@@ -72,7 +72,8 @@ exports.init = function (sbot, config) {
 
         //this code handles real time streaming of the hops map.
         function push (to, hops) {
-          out.push(meta ? {id: to, hops: hops} : to)
+          if(opts.hops == null || hops <= opts.hops)
+            out.push(meta ? {id: to, hops: hops} : to)
         }
 
         var out = [], g = index.value.value
@@ -98,7 +99,6 @@ exports.init = function (sbot, config) {
         }
         return out
       })
-
     )
   }
 
@@ -154,7 +154,7 @@ exports.init = function (sbot, config) {
     throw new Error('ssb-friends expects a replicate plugin to be available')
 
   pull(
-    createFriendStream({live: true, meta: true}),
+    createFriendStream({live: true, meta: true, hops: config.friends && config.friends.hops}),
     // filter out duplicates, and also keep track of what we expect to receive
     // lookup the latest sequence from each user
     // TODO: use paramap?
@@ -200,4 +200,7 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
+
 
