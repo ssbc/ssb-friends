@@ -20,30 +20,56 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
     pull.drain(function (m) { changes.push(m) })
   )
 
-  var followFeed = a_bot.createFeed()
-  var foafFeed = a_bot.createFeed()
+  var feedA = a_bot.createFeed()
+  var feedB = a_bot.createFeed()
+  var feedC = a_bot.createFeed()
 
-  followFeed.publish({
+  // feedA -> feedB
+  feedA.publish({
     type: 'contact',
-    contact: foafFeed.id,
+    contact: feedB.id,
     following: true
   }, function () {
     t.deepEqual(changes, [
       { id: a_bot.id, hops: 0 }
     ])
 
-    a_bot.publish({
+    changes.length = 0
+
+    // feedB -> feedC
+    feedB.publish({
       type: 'contact',
-      contact: followFeed.id,
+      contact: feedC.id,
       following: true
     }, function () {
-      t.deepEqual(changes, [
-        { id: a_bot.id, hops: 0 },
-        { id: followFeed.id, hops: 1 },
-        { id: foafFeed.id, hops: 2 }
-      ])
-      a_bot.close()
-      t.end()
+      // follow feedA
+      a_bot.publish({
+        type: 'contact',
+        contact: feedA.id,
+        following: true
+      }, function () {
+        t.deepEqual(changes, [
+          { id: feedA.id, hops: 1 },
+          { id: feedB.id, hops: 2 }
+        ])
+
+        changes.length = 0
+
+        // follow feedB
+        a_bot.publish({
+          type: 'contact',
+          contact: feedB.id,
+          following: true
+        }, function () {
+          t.deepEqual(changes, [
+            { id: feedB.id, hops: 1 },
+            { id: feedC.id, hops: 2 }
+          ])
+
+          a_bot.close()
+          t.end()
+        })
+      })
     })
   })
 })
