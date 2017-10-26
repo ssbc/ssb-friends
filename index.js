@@ -24,6 +24,20 @@ function isFriend (friends, a, b) {
   return friends[a] && friends[b] && friends[a][b] && friends[b][a]
 }
 
+function checkHopsUpdated (then, now) {
+  return then[0] !== now[0]
+}
+
+var algOpts = {
+  initial: block.initial,
+  compare: block.compare,
+  update: function (then, now) {
+    return block.update(then, now) || checkHopsUpdated(then, now)
+  },
+  reduce: block.reduce,
+  expand: block.expand
+}
+
 exports.name = 'friends'
 exports.version = '1.0.0'
 exports.manifest = {
@@ -80,15 +94,15 @@ exports.init = function (sbot, config) {
 
         //the edge has already been added to g
         if(!reachable) {
-          reachable = F.reachable(g, start, block)
+          reachable = F.reachable(g, start, algOpts)
           reachable[sbot.id] = [0, undefined]
           for(var k in reachable)
             if(block.isWanted(reachable[k]))
               push(k, reachable[k][0])
         } else {
-          var _reachable = F.reachable(g, start, block)
+          var _reachable = F.reachable(g, start, algOpts)
           _reachable[sbot.id] = [0, undefined]
-          var patch = F.diff(reachable, _reachable, block)
+          var patch = F.diff(reachable, _reachable, algOpts)
           for(var k in patch) {
             if(patch[k] == null || patch[k][0] == null || patch[k][0] > patch[k][1])
               push(k, -1)
@@ -200,7 +214,3 @@ exports.init = function (sbot, config) {
     }
   }
 }
-
-
-
-
