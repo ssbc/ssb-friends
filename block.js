@@ -11,8 +11,17 @@ function isFollowing (a) {
   return a[0] < a[1]
 }
 
+function isCloser(then, now) {
+  if(then[0] != null && now[0] != null && now[0] < then[0])
+    return true
+}
+
 exports.update = function (then, now) {
-  return isFollowing(then) != isFollowing(now)
+//  if(now[0] === 0) return true //this is us
+  if(isFollowing(now) != isFollowing(then)) return true
+  if(isCloser(then, now)) return true
+  return false
+//  return isCloser(then, now) || isFollowing(then) != isFollowing(now)
 }
 
 function min (a, b) {
@@ -41,7 +50,7 @@ exports.reduce = function (target, source, value) {
 
 exports.expand = function (value) {
   if(!value || value[0] == null) return false
-  if(value[0] < 3) //followed before blocked
+  if(value[0] != null) //followed before blocked
     if(null == value[1]) return true
     //expand if we followed directly
     else if(value[0] < value[1]) return true
@@ -54,5 +63,6 @@ exports.isWanted = function (target) {
   if(target[1] == null) return target[0] >= 0
   return target[0] <= target[1]
 }
+
 
 

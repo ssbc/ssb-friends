@@ -31,7 +31,7 @@ var defaultOpts = {
     return target
   },
   expand: function expand (v) {
-    return v != null && v >= 0 && v <= 3
+    return v != null && v >= 0 /*&& v <= 3*/
   }
 }
 
