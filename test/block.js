@@ -22,6 +22,8 @@ tape('update?', function (t) {
   t.equal(block.update([u, 1], [u,2]), false)
   t.equal(block.update([0], [0, u]), false)
   t.equal(block.update([0], [0, 2]), false)
+  t.equal(block.update([2, u], [1,u]), true)
+  t.equal(block.update([3, u], [2,u]), true)
 
   t.end()
 
@@ -142,11 +144,4 @@ tape('networks2', function (t) {
   t.end()
 
 })
-
-
-
-
-
-
-
 
