@@ -20,7 +20,6 @@ tape('empty database follow self', function (t) {
       t.end()
     })
   )
-
 })
 
 
@@ -30,7 +29,7 @@ tape('live follows works', function (t) {
   var a = [], b = [], c = []
 
   pull(
-    a_bot.friends.createFriendStream({live: true, meta: true}),
+    a_bot.friends.createFriendStream({live: true, meta: true, hops: 10}),
     pull.drain(function (m) { a.push(m) })
   )
 
@@ -45,18 +44,27 @@ tape('live follows works', function (t) {
   )
 
 
-  gen.initialize(a_bot, 10, 1, function (err, peers) {
+  gen.initialize(a_bot, 100, 1, function (err, peers) {
     console.log(peers.map(function (e) { return e.id }))
     console.log(a)
-    t.deepEqual(a.length, peers.length)
+    var seen = {}, count = 0
+    a.forEach(function (v) {
+      if(!seen[v.id]) {
+        seen[v.id] = true
+        count ++
+      }
+    })
+    t.deepEqual(count, peers.length, 'all peers streamed')
     b.forEach(function (e) { t.ok(e.hops <= 1, 'b '+e.hops+' hops <= 1') })
     c.forEach(function (e) { t.ok(e.hops <= 2, 'c '+e.hops+' hops <= 2') })
-    t.ok(a.length >= b.length)
-    t.ok(c.length >= b.length)
+    t.ok(a.length >= b.length, '1 hops')
+    t.ok(c.length >= b.length, '2 hops')
 
     t.end()
     a_bot.close()
   })
 
 })
+
+
 
