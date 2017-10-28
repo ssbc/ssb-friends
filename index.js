@@ -1,3 +1,4 @@
+'use strict'
 var G           = require('graphreduce')
 var Reduce      = require('flumeview-reduce')
 var pull        = require('pull-stream')
@@ -65,6 +66,20 @@ exports.init = function (sbot, config) {
     //mabye this could be rewritten cleaner with
     //index.value (an observable) instead?
 
+    var t = 0, count = 0, m = 0
+
+    //The current algorithm was blocking quite a bit
+    //because it re-traversed the entire graph
+    //for every edge added. This script is to track
+    //how many ms it's doing that for each second.
+    //obviously, remove that once performance is good.
+    if(opts.hops)
+      setInterval(function () {
+        if(count)
+          console.error('ssb-friends:blockingness', t, count, m, t/count)
+        t = count = m = 0
+      }, 1000).unref()
+
     return pull(
       index.stream(opts),
       FlatMap(function (v) {
@@ -75,7 +90,6 @@ exports.init = function (sbot, config) {
           if(opts.hops == null || hops <= opts.hops)
             out.push(meta ? {id: to, hops: hops} : to)
         }
-
         var out = [], g = index.value.value
 
         //the edge has already been added to g
@@ -85,15 +99,25 @@ exports.init = function (sbot, config) {
           for(var k in reachable)
             if(block.isWanted(reachable[k]))
               push(k, reachable[k][0])
-        } else {
+        } else if(reachable && reachable[v.from] && reachable[v.to]) {
+          if(reachable[v.from][0] + 1 == reachable[v.to][0])
+          return []
+        }
+        else {
+          var ts = Date.now()
           var _reachable = F.reachable(g, start, block)
           _reachable[sbot.id] = [0, undefined]
           var patch = F.diff(reachable, _reachable, block)
+          t += Date.now() - ts
+          count ++
           for(var k in patch) {
-            if(patch[k] == null || patch[k][0] == null || patch[k][0] > patch[k][1])
+            if(patch[k] == null || patch[k][0] == null || patch[k][0] > patch[k][1]) {
+              m++
               push(k, -1)
-            else if(block.isWanted(patch[k]))
+            } else if(block.isWanted(patch[k])) {
+              m++
               push(k, patch[k][0])
+            }
           }
           reachable = _reachable
         }
@@ -200,7 +224,4 @@ exports.init = function (sbot, config) {
     }
   }
 }
-
-
-
 
