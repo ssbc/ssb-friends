@@ -71,6 +71,8 @@ exports.diffReachable = function (graph, reachable, edge, opts) {
   if(!opts)
     opts = defaultOpts
 
+  if(reachable[edge.from] == null) return {}
+
   var visited = {}
   var queue = [edge.to]
   var _value =
