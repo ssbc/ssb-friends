@@ -6,6 +6,7 @@ function isEqual (a,b) {
 }
 
 function isFollowing (a) {
+  if(!a) return false
   if(a[1] == null) return a[0] != null
   if(a[0] == null) return false
   return a[0] < a[1]
@@ -63,6 +64,7 @@ exports.isWanted = function (target) {
   if(target[1] == null) return target[0] >= 0
   return target[0] <= target[1]
 }
+
 
 
 
