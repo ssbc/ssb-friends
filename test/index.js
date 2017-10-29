@@ -1,12 +1,33 @@
 
 var F = require('../alg')
+var G = require('graphreduce')
 var tape = require('tape')
 
 tape('simple', function (t) {
   var g = {}
   g = F.add(g, 'a', 'b', true)
+  t.deepEqual(
+    F.diffReachable(g, {a:0}, {from: 'a', to: 'b', value: true}),
+    {b: 1}
+  )
   g = F.add(g, 'a', 'c', true)
+  t.deepEqual(
+    F.diffReachable(
+      g,
+      {a:0,b:1},
+      {from: 'a', to: 'c', value: true}
+    ),
+    {c: 1}
+  )
   g = F.add(g, 'b', 'd', true)
+  t.deepEqual(
+    F.diffReachable(
+      g,
+      {a:0,b:1, c: 1},
+      {from: 'b', to: 'd', value: true}
+    ),
+    {d: 2}
+  )
 
   t.deepEqual(g, {
     a: {b: true, c: true},
@@ -19,6 +40,26 @@ tape('simple', function (t) {
 
   t.end()
 
+})
+
+tape('shorten!', function (t) {
+  var g = {
+    a: {b: true},
+    b: {c: true},
+    c: {d: true, e: true, f: true}
+  }
+  var r = {a: 0, b:1, c: 2, d: 3, e:3, f:3}
+  t.deepEqual(F.reachable(g, 'a'), r)
+  g = F.add(g, 'a', 'c', true)
+  var d = {c:1, d:2,e:2,f:2}
+  t.deepEqual(F.diff(r, F.reachable(g, 'a')), d)
+
+  t.deepEqual(
+    F.diffReachable(g, r, {from: 'a', to: 'c', value: true}),
+    d
+  )
+
+  t.end()
 })
 
 tape('chain', function (t) {
@@ -177,4 +218,7 @@ tape('chain, with block at hop 2, but follow then block!', function (t) {
 
   t.end()
 })
+
+
+
 
