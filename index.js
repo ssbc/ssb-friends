@@ -71,8 +71,8 @@ exports.init = function (sbot, config) {
     var all = {}, COUNT = 0
     return pull(
       index.stream(opts),
+      pull.filter(),
       FlatMap(function (v) {
-        if(!v) return []
 
         //this code handles real time streaming of the hops map.
         function push (to, hops) {
@@ -213,4 +213,6 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
 

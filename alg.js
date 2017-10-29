@@ -46,7 +46,6 @@ exports.reachable = function (graph, start, opts) {
   var queue = [start];
   while(queue.length) {
     var cursor = queue.shift()
-  //  var value = visited[cursor]
     for(var k in graph[cursor]) {
       var v = graph[cursor][k]
       var _value = visited[k]
@@ -93,19 +92,14 @@ exports.diffReachable = function (graph, reachable, edge, opts) {
     var value = visited[cursor]
     for(var k in graph[cursor]) {
       var v = graph[cursor][k] //follow, unfollow, block, etc
-      var _value = reachable[k]
+      var _value = visited[k] == null ? reachable[k] : visited[k]
 
       var value = opts.reduce(_value, visited[cursor], v)
 
-//      console.log(cursor, k, value, _value, opts.update(_value, value))
       if(value != null && opts.update(_value, value)) {
-//        if(visited[k] < value) throw new Error('should not decrease')
         visited[k] = value
         queue.push(k)
       }
-//        if(opts.expand(visited[k]) && _value == null)
-//          queue.push(k)
-
     }
   }
 
