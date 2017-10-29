@@ -41,7 +41,24 @@ tape('random graph, compare diffs', function (t) {
   t.end()
 })
 
-return
+// I was getting a infinite loop running this with scuttlebot
+// tests and I couldn't figure out why. This didn't reproduce it.
+
+tape('flat random!', function (t) {
+  var g = {}, N = 100
+  for(var i = 0; i < N*100; i++) {
+    var edge = {
+      from: ~~(Math.random()*N),
+      to: ~~(Math.random()*N),
+      value: true
+    }
+    var r = F.reachable(g, 0)
+    g = G.addEdge(g, g.from, g.to, g.value)
+    F.diffReachable(g, r, edge)
+  }
+  t.end()
+})
+
 var block = require('../block')
 
 tape('random graph, block settings', function (t) {
@@ -65,6 +82,4 @@ tape('random graph, block settings', function (t) {
   t.end()
 
 })
-
-
 

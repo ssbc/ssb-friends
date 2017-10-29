@@ -42,6 +42,58 @@ tape('simple', function (t) {
 
 })
 
+tape('add the same edge twice', function (t) {
+  var g = {}
+  g = F.add(g, 'a', 'b', true)
+  t.deepEqual(
+    F.diffReachable(g, {a:0}, {from: 'a', to: 'b', value: true}),
+    {b: 1}
+  )
+  g = F.add(g, 'a', 'b', true)
+  t.deepEqual(
+    F.diffReachable(
+      g,
+      {a:0,b:1},
+      {from: 'a', to: 'c', value: true}
+    ),
+    {c: 1}
+  )
+
+  g = F.add(g, 'b', 'a', true)
+  t.deepEqual(
+    F.diffReachable(
+      g,
+      {a:0,b:1},
+      {from: 'a', to: 'c', value: true}
+    ),
+    {c: 1}
+  )
+
+
+//  g = F.add(g, 'b', 'd', true)
+//  t.deepEqual(
+//    F.diffReachable(
+//      g,
+//      {a:0,b:1, c: 1},
+//      {from: 'b', to: 'd', value: true}
+//    ),
+//    {d: 2}
+//  )
+
+//  t.deepEqual(g, {
+//    a: {b: true, c: true},
+//    b: {d: true}
+//  })
+//
+//  t.deepEqual(F.reachable(g, 'a'), {
+//    a: 0, b: 1, c: 1, d: 2
+//  })
+
+  t.end()
+
+})
+
+
 tape('shorten!', function (t) {
   var g = {
     a: {b: true},
@@ -218,6 +270,8 @@ tape('chain, with block at hop 2, but follow then block!', function (t) {
 
   t.end()
 })
+
+
 
 
 
