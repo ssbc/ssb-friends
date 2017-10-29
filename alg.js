@@ -42,21 +42,71 @@ exports.reachable = function (graph, start, opts) {
 
   var visited = {}
   visited[start] = opts.initial
-  var queue = [start]
+
+  var queue = [start];
+  while(queue.length) {
+    var cursor = queue.shift()
+  //  var value = visited[cursor]
+    for(var k in graph[cursor]) {
+      var v = graph[cursor][k]
+      var _value = visited[k]
+      var value = opts.reduce(_value, visited[cursor], v)
+      if(value != null)
+        visited[k] = value
+      if(opts.expand(visited[k]) && _value == null)
+        queue.push(k)
+    }
+  }
+
+  return visited
+}
+
+//find nodes that are now reachable after adding edge
+//where graph is the updated graph (including edge)
+//but reachable is the vertices reachable befor edge was added.
+//this is a faster way to calculate:
+//F.diff(reachable, F.reachable(graph), opts)
+
+exports.diffReachable = function (graph, reachable, edge, opts) {
+  if(!opts)
+    opts = defaultOpts
+
+  var visited = {}
+  var queue = [edge.to]
+  var _value =
+    opts.reduce(reachable[edge.to], reachable[edge.from], edge.value)
+
+  //check if this edge doesn't change the traversability of the graph
+  if(!opts.update(reachable[edge.to], _value))
+    return {}
+  
+  visited[edge.to] = _value
+  //it shouldn't really be that surprising that width first
+  //is somewhat slower than depth first, since we have to keep
+  //this array around (instead of just using a stack...)
+  //however, I think width first is the correct implementation.
+  var queue = [edge.to]
   while(queue.length) {
     var cursor = queue.shift()
     var value = visited[cursor]
     for(var k in graph[cursor]) {
-      var v = graph[cursor][k]
-      var previous = visited[k]
-      var value = opts.reduce(visited[k], visited[cursor], v)
-      if(value != null) {
+      var v = graph[cursor][k] //follow, unfollow, block, etc
+      var _value = reachable[k]
+
+      var value = opts.reduce(_value, visited[cursor], v)
+
+//      console.log(cursor, k, value, _value, opts.update(_value, value))
+      if(value != null && opts.update(_value, value)) {
+//        if(visited[k] < value) throw new Error('should not decrease')
         visited[k] = value
+        queue.push(k)
       }
-      if(opts.expand(visited[k]) && previous == null)
-          queue.push(k)
+//        if(opts.expand(visited[k]) && _value == null)
+//          queue.push(k)
+
     }
   }
+
   return visited
 }
 
@@ -75,3 +125,9 @@ exports.diff = function (then, now, opts) {
   }
   return added
 }
+
+exports.patch = function (then, now) {
+  for(var k in now)
+    then[k] = now[k]
+}
+
