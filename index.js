@@ -68,19 +68,6 @@ exports.init = function (sbot, config) {
 
     var t = 0, count = 0, m = 0
 
-    //The current algorithm was blocking quite a bit
-    //because it re-traversed the entire graph
-    //for every edge added. This script is to track
-    //how many ms it's doing that for each second.
-    //obviously, remove that once performance is good.
-    var count2 = 0
-    if(opts.hops)
-      setInterval(function () {
-        if(count)
-          console.error('BBB', t, count, count2, m, t/count, COUNT)
-        t = count = m = count2 = 0
-      }, 1000).unref()
-
     var all = {}, COUNT = 0
     return pull(
       index.stream(opts),
@@ -89,11 +76,6 @@ exports.init = function (sbot, config) {
 
         //this code handles real time streaming of the hops map.
         function push (to, hops) {
-            if(!all[to]) {
-              all[to] = hops; COUNT ++
-            }
-//            else
-//              console.log('>>', to, hops, all[to], '_', COUNT)
           if(opts.hops == null || hops <= opts.hops) {
             out.push(meta ? {id: to, hops: hops} : to)
           }
@@ -108,43 +90,23 @@ exports.init = function (sbot, config) {
             if(block.isWanted(reachable[k]))
               push(k, reachable[k][0])
         }
-//        else if(
-//          reachable &&
-//          reachable[v.from] && reachable[v.to] &&
-//          v.value &&
-//          reachable[v.from][0] + 1 >= reachable[v.to][0]
-//          ) {
-//          return []
-//        }
         else if(v.value) { //follows can be calculated cheaply!
-          var ts = Date.now()
           var patch = F.diffReachable(g, reachable, v, block)
-          t += Date.now() - ts
-          count ++
-          count2++
           for(var k in patch) {
             reachable[k] = patch[k]
-            m++
             push(k, patch[k][0])
           }
-          t += Date.now() - ts
-
         }
         else {
-          var ts = Date.now()
           var _reachable = F.reachable(g, start, block)
           _reachable[sbot.id] = [0, undefined]
           var patch = F.diff(reachable, _reachable, block)
-          t += Date.now() - ts
-          count ++
           for(var k in patch) {
-            if(patch[k] == null || patch[k][0] == null || patch[k][0] > patch[k][1]) {
-              m++
+            if(patch[k] == null || patch[k][0] == null || patch[k][0] > patch[k][1])
               push(k, -1)
-            } else if(block.isWanted(patch[k])) {
-              m++
+            else if(block.isWanted(patch[k]))
               push(k, patch[k][0])
-            }
+
           }
           reachable = _reachable
         }
@@ -251,7 +213,4 @@ exports.init = function (sbot, config) {
     }
   }
 }
-
-
-
 
