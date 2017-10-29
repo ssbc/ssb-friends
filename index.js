@@ -73,13 +73,15 @@ exports.init = function (sbot, config) {
     //for every edge added. This script is to track
     //how many ms it's doing that for each second.
     //obviously, remove that once performance is good.
+    var count2 = 0
     if(opts.hops)
       setInterval(function () {
         if(count)
-          console.error('ssb-friends:blockingness', t, count, m, t/count)
-        t = count = m = 0
+          console.error('BBB', t, count, count2, m, t/count, COUNT)
+        t = count = m = count2 = 0
       }, 1000).unref()
 
+    var all = {}, COUNT = 0
     return pull(
       index.stream(opts),
       FlatMap(function (v) {
@@ -87,8 +89,14 @@ exports.init = function (sbot, config) {
 
         //this code handles real time streaming of the hops map.
         function push (to, hops) {
-          if(opts.hops == null || hops <= opts.hops)
+            if(!all[to]) {
+              all[to] = hops; COUNT ++
+            }
+//            else
+//              console.log('>>', to, hops, all[to], '_', COUNT)
+          if(opts.hops == null || hops <= opts.hops) {
             out.push(meta ? {id: to, hops: hops} : to)
+          }
         }
         var out = [], g = index.value.value
 
@@ -99,9 +107,28 @@ exports.init = function (sbot, config) {
           for(var k in reachable)
             if(block.isWanted(reachable[k]))
               push(k, reachable[k][0])
-        } else if(reachable && reachable[v.from] && reachable[v.to]) {
-          if(reachable[v.from][0] + 1 == reachable[v.to][0])
-          return []
+        }
+//        else if(
+//          reachable &&
+//          reachable[v.from] && reachable[v.to] &&
+//          v.value &&
+//          reachable[v.from][0] + 1 >= reachable[v.to][0]
+//          ) {
+//          return []
+//        }
+        else if(v.value) { //follows can be calculated cheaply!
+          var ts = Date.now()
+          var patch = F.diffReachable(g, reachable, v, block)
+          t += Date.now() - ts
+          count ++
+          count2++
+          for(var k in patch) {
+            reachable[k] = patch[k]
+            m++
+            push(k, patch[k][0])
+          }
+          t += Date.now() - ts
+
         }
         else {
           var ts = Date.now()
@@ -224,4 +251,7 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
+
 
