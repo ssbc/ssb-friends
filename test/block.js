@@ -1,5 +1,5 @@
-
 var tape = require('tape')
+var G = require('graphreduce')
 
 var block = require('../block')
 var F = require('../alg')
@@ -138,10 +138,27 @@ tape('networks2', function (t) {
 //  })
 //
 //  t.deepEqual(F.diff(r1, r2, block), {
-//    e: [2,u]
+1//    e: [2,u]
 //  })
 //
   t.end()
 
 })
+
+tape('block graphs', function (t) {
+
+  function testReachable (g, edge) {
+    var reachable = F.reachable(g, 0, block)
+    G.addEdge(g, edge.from, edge.to, edge.value)
+    var patch = F.diffReachable(g, reachable, edge, block)
+    var _reachable = F.reachable(g, 0, block)
+    var _patch = F.diff(reachable, _reachable, block)
+    t.deepEqual(_patch, patch)
+  }
+
+  var g = {}
+  testReachable(g, {from:0, to: 0, value: true})
+
+})
+
 
