@@ -13,6 +13,7 @@ function isFollowing (a) {
 }
 
 function isCloser(then, now) {
+  if(!then) return true
   if(then[0] != null && now[0] != null && now[0] < then[0])
     return true
 }
