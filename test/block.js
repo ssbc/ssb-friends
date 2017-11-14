@@ -99,6 +99,8 @@ tape('networks', function (t) {
 
 })
 
+
+
 tape('networks2', function (t) {
   var g = {
     a: {b: true},
@@ -160,5 +162,37 @@ tape('block graphs', function (t) {
   testReachable(g, {from:0, to: 0, value: true})
   t.end()
 })
+
+/*
+Okay, this was a weird problem.
+someone is a "frenemy" if they are both a friend of a friend
+and an enemy (blocked) of a friend.
+
+We still replicate their messages, but we don't replicate
+anyone that they follow. This was making their patches
+come out as {<key>: null} this is fixed now I think, but this
+is what this test is about...
+*/
+
+tape('frenemy', function (t) {
+  var g = {
+    a: {b: true, c: true},
+    c: {d: false},
+    b: {d: true},
+  }
+
+  var r1 = F.reachable(g, 'a', block)
+  console.log(r1)
+
+  g.d = {e: true}
+
+  var patch = F.diffReachable(r1, g, {from: 'd', to: 'e', value: true}, block)
+  t.deepEqual(patch, {})
+  var r2 = F.reachable(g, 'a', block)
+  t.deepEqual(patch, F.diff(r1, r2))
+
+  t.end()
+})
+
 
 
