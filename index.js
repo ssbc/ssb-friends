@@ -25,6 +25,12 @@ function isFriend (friends, a, b) {
   return friends[a] && friends[b] && friends[a][b] && friends[b][a]
 }
 
+function isEmpty (o) {
+  for(var k in o)
+    return false
+  return true
+}
+
 exports.name = 'friends'
 exports.version = '1.0.0'
 exports.manifest = {
@@ -83,7 +89,7 @@ exports.init = function (sbot, config) {
         var out = [], g = index.value.value
 
         //the edge has already been added to g
-        if(!reachable) {
+        if(!reachable || isEmpty(reachable)) {
           reachable = F.reachable(g, start, block)
           reachable[sbot.id] = [0, undefined]
           for(var k in reachable)
@@ -93,8 +99,14 @@ exports.init = function (sbot, config) {
         else if(v.value) { //follows can be calculated cheaply!
           var patch = F.diffReachable(g, reachable, v, block)
           for(var k in patch) {
-            reachable[k] = patch[k]
-            push(k, patch[k][0])
+            if(patch[k] == null) {
+              delete reachable[k]
+              push(k, -1)
+            }
+            else {
+              reachable[k] = patch[k]
+              push(k, patch[k][0])
+            }
           }
         }
         else {
@@ -213,6 +225,4 @@ exports.init = function (sbot, config) {
     }
   }
 }
-
-
 
