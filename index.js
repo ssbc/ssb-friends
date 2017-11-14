@@ -90,13 +90,13 @@ exports.init = function (sbot, config) {
             if(block.isWanted(reachable[k]))
               push(k, reachable[k][0])
         }
-        else if(v.value) { //follows can be calculated cheaply!
-          var patch = F.diffReachable(g, reachable, v, block)
-          for(var k in patch) {
-            reachable[k] = patch[k]
-            push(k, patch[k][0])
-          }
-        }
+        // else if(v.value) { //follows can be calculated cheaply!
+        //   var patch = F.diffReachable(g, reachable, v, block)
+        //   for(var k in patch) {
+        //     reachable[k] = patch[k]
+        //     push(k, patch[k][0])
+        //   }
+        // }
         else {
           var _reachable = F.reachable(g, start, block)
           _reachable[sbot.id] = [0, undefined]
