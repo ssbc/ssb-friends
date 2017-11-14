@@ -42,6 +42,8 @@ exports.reduce = function (target, source, value) {
     return [min(target[0], source[0]+1), target[1]]
   }
   else if(frenemy) {
+    //returns null because we don't transitively follow
+    //when someone is blocked by a friend.
     return target.length ? target : null
   }
   else if(value === false) {

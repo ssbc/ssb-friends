@@ -77,6 +77,8 @@ exports.diffReachable = function (graph, reachable, edge, opts) {
   var _value =
     opts.reduce(reachable[edge.to], reachable[edge.from], edge.value)
 
+  if(_value == null) return {}
+
   //check if this edge doesn't change the traversability of the graph
   if(!opts.update(reachable[edge.to], _value))
     return {}
