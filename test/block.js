@@ -158,7 +158,7 @@ tape('block graphs', function (t) {
 
   var g = {}
   testReachable(g, {from:0, to: 0, value: true})
-
+  t.end()
 })
 
 
