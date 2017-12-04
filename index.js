@@ -31,6 +31,19 @@ function isEmpty (o) {
   return true
 }
 
+function isGraphChanger (msg) {
+  var c = msg.value.content
+  return c && (
+    typeof c.following === 'boolean' ||
+    typeof c.blocking === 'boolean' ||
+    typeof c.flagged === 'boolean'
+  )
+}
+
+function isContactMsg (msg) {
+  return msg.value.content.type === 'contact' && ref.isFeed(msg.value.content.contact)
+}
+
 exports.name = 'friends'
 exports.version = '1.0.0'
 exports.manifest = {
@@ -49,7 +62,7 @@ exports.init = function (sbot, config) {
     G.addEdge(g, rel.from, rel.to, rel.value)
     return g
   }, function (data) {
-    if(data.value.content.type === 'contact' && ref.isFeed(data.value.content.contact)) {
+    if(isContactMsg(data) && isGraphChanger(data)) {
       var tristate = (
         data.value.content.following ? true
       : data.value.content.flagged || data.value.content.blocking ? false
@@ -225,4 +238,3 @@ exports.init = function (sbot, config) {
     }
   }
 }
-
