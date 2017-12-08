@@ -197,13 +197,20 @@ exports.init = function (sbot, config) {
     get: function (opts, cb) {
       if(!cb)
         cb = opts, opts = {}
-      index.get(function (err, value) {
+      index.get({}, function (err, value) {
         if(err) return cb(err)
         //opts is used like this in ssb-ws
         if(opts && opts.source) {
           value = value[opts.source]
           if(value && opts.dest)
             value = value[opts.dest]
+        }
+        else if( opts && opts.dest) {
+          var _value = {}
+          for(var k in value)
+            if('undefined' !== typeof value[k][opts.dest])
+              _value[k] = value[k][opts.dest]
+          return cb(null, _value)
         }
         cb(null, value)
       })
@@ -225,4 +232,7 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
+
 
