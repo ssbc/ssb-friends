@@ -24,7 +24,7 @@ ability to express the following types of relationships.
       A': 0, //A is same-as A'
       C: 2, //explicitly consider C to be 2 hops from A.
       D: [1, 2] //consider D to be followed at one hops, but consider their follows to be 3 hops away.
-      A": [0, 2] //replicate A as same as, but do consider their follows to be 2 hops out.
+      A'': [0, 2] //replicate A as same as, but do consider their follows to be 2 hops out.
     },
     B: {
       A: 1, C: 1
