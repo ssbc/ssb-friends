@@ -1,278 +1,192 @@
 
-var F = require('../alg')
-var G = require('graphreduce')
+var hops = require('../').hops
 var tape = require('tape')
 
-tape('simple', function (t) {
-  var g = {}
-  g = F.add(g, 'a', 'b', true)
+tape('a->b->c', function (t) {
   t.deepEqual(
-    F.diffReachable(g, {a:0}, {from: 'a', to: 'b', value: true}),
-    {b: 1}
+    hops({
+      a: {b: 1},
+      b: {c: 1},
+      c: {}
+    }, 'a'),
+    {a:0, b:1, c:2}
   )
-  g = F.add(g, 'a', 'c', true)
+  t.end()
+})
+
+tape('a->b=c', function (t) {
   t.deepEqual(
-    F.diffReachable(
-      g,
-      {a:0,b:1},
-      {from: 'a', to: 'c', value: true}
+    hops({
+      a: {b: 1},
+      b: {c: 0},
+      c: {b: 0}
+    }, 'a'),
+    {a:0, b:1, c:1}
+  )
+  t.end()
+})
+
+tape('a=A->b,A->c', function (t) {
+  t.deepEqual(
+    hops({
+      a: {b: 1, A: 0},
+      b: {c: 1},
+      c: {},
+      A: {a:0, c: 1}
+    }, 'a'),
+    {a:0, A:0, b:1, c:1}
+  )
+  t.end()
+})
+
+tape('a=A->b,A->c', function (t) {
+  t.deepEqual(
+    hops({
+      a: {b: 1, A: 0},
+      b: {c: 1},
+      c: {},
+      A: {a:0, c: 1}
+    }, 'a'),
+    {a:0, A:0, b:1, c:1}
+  )
+  t.end()
+})
+
+tape('a->b-2>c->d, max=3', function (t) {
+  t.deepEqual(
+    hops({
+      a: {b: 1},
+      b: {c: 2},
+      c: {d: 1},
+      d: {}
+    }, 'a', 3),
+    {a:0, b:1, c:3}
+  )
+  t.end()
+})
+
+tape('a->b-2>c->d, max=3', function (t) {
+  t.deepEqual(
+    hops({
+      a: {b: 1},
+      b: {c: 2},
+      c: {d: 1},
+      d: {}
+    }, 'a', 2),
+    {a:0, b:1}
+  )
+  t.end()
+})
+
+tape('a=A->b,A->c', function (t) {
+  t.deepEqual(
+    hops({
+      a: {b: 1},
+      b: {c: [1, 3]},
+      c: {d: 1},
+      d: {}
+    }, 'a'),
+    {a:0, b:1, c:2, d: 5}
+  )
+  t.end()
+})
+
+tape('A!C, A->B->C', function (t) {
+  t.deepEqual(
+    hops({
+        a: {b: 1},
+        b: {c: 1}
+      },
+      'a',
+      2,
+      {c: {a: true}}
     ),
-    {c: 1}
+    {
+      a: 0,
+      b: 1
+      //c is blocked
+    }
   )
-  g = F.add(g, 'b', 'd', true)
+  t.end()
+})
+//even though hops is really high, do not replicate D, since they are only
+//followed by a frenemy.
+
+tape('E!C, A->B->C->D,A->E;hops=4', function (t) {
   t.deepEqual(
-    F.diffReachable(
-      g,
-      {a:0,b:1, c: 1},
-      {from: 'b', to: 'd', value: true}
+    hops({
+        a: {b: 1, e: 1},
+        b: {c: 1}
+      },
+      'a',
+      4,
+      {c: {e: true}}
     ),
-    {d: 2}
+    {
+      a: 0,
+      b: 1,
+      e: 1,
+      c: 2
+      //D is a foaf but also eoaf.
+    }
   )
-
-  t.deepEqual(g, {
-    a: {b: true, c: true},
-    b: {d: true}
-  })
-
-  t.deepEqual(F.reachable(g, 'a'), {
-    a: 0, b: 1, c: 1, d: 2
-  })
-
   t.end()
-
 })
 
-tape('add the same edge twice', function (t) {
-  var g = {}
-  g = F.add(g, 'a', 'b', true)
+//blocked by our other device
+tape('A_!C, A->B->C,A=A_', function (t) {
   t.deepEqual(
-    F.diffReachable(g, {a:0}, {from: 'a', to: 'b', value: true}),
-    {b: 1}
-  )
-  g = F.add(g, 'a', 'b', true)
-  t.deepEqual(
-    F.diffReachable(
-      g,
-      {a:0,b:1},
-      {from: 'a', to: 'c', value: true}
+    hops({
+        a: {b: 1, a_: 0},
+        b: {c: 1}
+      },
+      'a',
+      2,
+      {c: {a_: true}}
     ),
-    {c: 1}
+    {
+      a: 0,
+      b: 1,
+      a_: 0,
+      //D is a foaf but also eoaf.
+    }
   )
+  t.end()
+})
 
-  g = F.add(g, 'b', 'a', true)
+//loosly followed by A, but blocked by closer friend.
+tape('A_!C, A->B->C,A=A_', function (t) {
   t.deepEqual(
-    F.diffReachable(
-      g,
-      {a:0,b:1},
-      {from: 'a', to: 'c', value: true}
+    hops({
+        a: {b: 1, c: 3},
+      },
+      'a',
+      3,
+      {c: {b: true}}
     ),
-    {c: 1}
+    {
+      a: 0,
+      b: 1,
+    }
   )
-
-
-//  g = F.add(g, 'b', 'd', true)
-//  t.deepEqual(
-//    F.diffReachable(
-//      g,
-//      {a:0,b:1, c: 1},
-//      {from: 'b', to: 'd', value: true}
-//    ),
-//    {d: 2}
-//  )
-
-//  t.deepEqual(g, {
-//    a: {b: true, c: true},
-//    b: {d: true}
-//  })
-//
-//  t.deepEqual(F.reachable(g, 'a'), {
-//    a: 0, b: 1, c: 1, d: 2
-//  })
-
   t.end()
-
 })
 
-
-tape('shorten!', function (t) {
-  var g = {
-    a: {b: true},
-    b: {c: true},
-    c: {d: true, e: true, f: true}
-  }
-  var r = {a: 0, b:1, c: 2, d: 3, e:3, f:3}
-  t.deepEqual(F.reachable(g, 'a'), r)
-  g = F.add(g, 'a', 'c', true)
-  var d = {c:1, d:2,e:2,f:2}
-  t.deepEqual(F.diff(r, F.reachable(g, 'a')), d)
-
+//loosly followed by A, but blocked by closer friend.
+tape('block and follow', function (t) {
   t.deepEqual(
-    F.diffReachable(g, r, {from: 'a', to: 'c', value: true}),
-    d
+    hops({
+        a: {b: 1},
+      },
+      'a',
+      1,
+      {b: {a: true}}
+    ),
+    {
+      a: 0,
+//      b: 1,
+    }
   )
-
   t.end()
 })
-
-tape('chain', function (t) {
-  var g = {}
-  g = F.add(g, 'a', 'b', true)
-  g = F.add(g, 'b', 'c', true)
-  g = F.add(g, 'c', 'd', true)
-
-  t.deepEqual(g, {
-    a: {b: true},
-    b: {c: true},
-    c: {d: true}
-  })
-
-  t.deepEqual(F.reachable(g, 'a'), {
-    a: 0, b: 1, c: 2, d: 3
-  })
-
-  t.end()
-
-})
-
-tape('chain, with remove', function (t) {
-  var g = {}
-  g = F.add(g, 'a', 'b', true)
-  g = F.add(g, 'b', 'c', true)
-  g = F.add(g, 'c', 'd', true)
-
-  var r1 = F.reachable(g, 'a')
-  t.deepEqual(r1, {
-    a: 0, b: 1, c: 2, d: 3
-  })
-
-  g = F.add(g, 'b', 'c', null)
-  t.deepEqual(g, {
-    a: {b: true},
-    b: {},
-    c: {d: true}
-  })
-  var r2 = F.reachable(g, 'a')
-  t.deepEqual(r2, {
-    a: 0, b: 1
-  })
-
-  g = F.add(g, 'a', 'c', true)
-
-  t.deepEqual(g, {
-    a: {b: true, c: true},
-    b: {},
-    c: {d: true}
-  })
-
-  t.deepEqual(F.reachable(g, 'a'), {
-    a: 0, b: 1, c: 1, d: 2
-  })
-
-  t.end()
-})
-
-tape('chain, with block', function (t) {
-  var g = {}
-  g = F.add(g, 'a', 'b', false)
-  g = F.add(g, 'a', 'c', true)
-  g = F.add(g, 'a', 'd', true)
-  g = F.add(g, 'c', 'b', true)
-  g = F.add(g, 'd', 'b', true)
-
-  t.deepEqual(g, {
-    a: {b: false, c: true, d: true},
-    c: {b: true},
-    d: {b: true}
-  })
-
-  var r1 = F.reachable(g, 'a')
-  t.deepEqual(r1, {
-    a: 0, b: -1, c: 1, d: 1
-  })
-
-  //since b is blocked, we don't care who their friends are
-  g = F.add(g, 'b', 'e')
-
-  t.deepEqual(g, {
-    a: {b: false, c: true, d: true},
-    c: {b: true},
-    d: {b: true},
-    b: {e: true}
-  })
-
-  //no change, because b was blocked
-  var r2 = F.reachable(g, 'a')
-  t.deepEqual(r2, {
-    a: 0, b: -1, c: 1, d: 1
-  })
-
-  t.deepEqual(F.diff(r1, r2), {})
-
-  t.end()
-
-})
-
-tape('chain, with block at hop 2', function (t) {
-  var g = {}
-  g = F.add(g, 'a', 'b', true)
-  g = F.add(g, 'a', 'c', true)
-
-  g = F.add(g, 'b', 'd', false)
-  g = F.add(g, 'c', 'd', true)
-
-  t.deepEqual(g, {
-    a: {b: true, c: true},
-    b: {d: false},
-    c: {d: true}
-  })
-
-  t.deepEqual(F.reachable(g, 'a'), {
-    a: 0, b: 1, c: 1, d: -2
-  })
-
-  t.end()
-})
-
-tape('chain, with block at hop 2, but follow then block!', function (t) {
-  var g = {}
-  g = F.add(g, 'a', 'b', true)
-  g = F.add(g, 'a', 'c', true)
-
-  g = F.add(g, 'b', 'd', true)
-
-  t.deepEqual(g, {
-    a: {b: true, c: true},
-    b: {d: true},
-  })
-
-  var r1 = F.reachable(g, 'a')
-
-  t.deepEqual(r1, {
-    a: 0, b: 1, c: 1, d: 2
-  })
-
-  g = F.add(g, 'c', 'd', false)
-
-  t.deepEqual(g, {
-    a: {b: true, c: true},
-    b: {d: true},
-    c: {d: false}
-  })
-
-  var r2 = F.reachable(g, 'a')
-  t.deepEqual(r2, {
-    a: 0, b: 1, c: 1, d: -2
-  })
-
-  t.deepEqual(F.diff(r1, r2), {
-      d: -2
-  })
-
-  t.end()
-})
-
-
-
-
-
 
