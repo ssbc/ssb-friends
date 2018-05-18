@@ -21,7 +21,7 @@ ability to express the following types of relationships.
   follows: {
     A: {
       B: 1, //A follows B.
-      A1: 0, //A is same-as A'
+      A1: 0, //A is same-as A1
       C: 2, //explicitly consider C to be 2 hops from A.
       D: [1, 2] //consider D to be followed at one hops, but consider their follows to be 3 hops away.
       A2: [0, 2] //replicate A as same as, but do consider their follows to be 2 hops out.
@@ -36,7 +36,7 @@ ability to express the following types of relationships.
       E: 1
     },
     A1: {
-      A: 0, //A' is also same-as A. *
+      A: 0, //A1 is also same-as A. *
     }
   },
   //blocks is the other way around.
@@ -53,7 +53,7 @@ the above data structure will convert to this hops map:
 
 ``` js
 {
-  A: 0, A': 0, A": 0, //our various devices
+  A: 0, A1: 0, A2: 0, //our various devices
   B: 1,
   C: 2, //2 hops, via explicit and C
   D: 1,
