@@ -69,5 +69,9 @@ exports.isWanted = function (target) {
 }
 
 
+exports.isCloser = function (value, oldValue) {
+  if(oldValue == null) return value >= 0
+  return value >= 0 ? value <= oldValue : false
+}
 
 
