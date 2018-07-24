@@ -15,9 +15,16 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
 
   var changes = []
 
+  var hops = {}
+
   pull(
     a_bot.friends.createFriendStream({live: true, meta: true, hops: 2}),
-    pull.drain(function (m) { changes.push(m) })
+    pull.drain(function (m) {
+      for(var k in m)
+        if(hops[k] != m[k]) {
+          changes.push({id: k, hops:hops[k] = m[k]})
+        }
+    })
   )
 
   var feedA = a_bot.createFeed()
