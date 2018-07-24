@@ -72,7 +72,7 @@ exports.init = function (sbot, config) {
       //wait till the index has loaded.
       layered.onReady(function () {
         var g = layered.getGraph()
-        if(g && opts.id !== id && g[opts.id] && g[opts.id][id] === false) {
+        if(g && opts.id !== id && g[opts.id] && g[opts.id][id] === -1) {
           cb(null, function (abort, cb) {
             //just give them the cold shoulder
           })
@@ -96,11 +96,24 @@ exports.init = function (sbot, config) {
     })
   })
 
-  sbot.auth.hook(function (fn, args) {
-    var self = this
+  function isFollows (opts, cb) {
     layered.onReady(function () {
       var g = layered.getGraph()
-      if(g && g[sbot.id] && g[sbot.id][args[0]] === false)
+        cb(null, g[opts.source] && g[opts.source][opts.dest] >= 0)
+    })
+  }
+
+  function isBlocked (opts, cb) {
+    layered.onReady(function () {
+      var g = layered.getGraph()
+        cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) == -1)
+    })
+  }
+
+  sbot.auth.hook(function (fn, args) {
+    var self = this
+    isBlocked({source: sbot.id, dest: args[0]}, function (err, blocked) {
+      if(blocked)
         args[1](new Error('client is blocked'))
       else fn.apply(self, args)
     })
@@ -129,13 +142,30 @@ exports.init = function (sbot, config) {
     streamNotify({from:j, to:k, value:v})
   })
 
+  function toLegacyValue (v) {
+    //follow and same-as are shown as follow
+    //-2 is unfollow, -1 is block.
+    return v >= 0 ? true : v === -2 ? null : v === -1 ? false : null
+  }
+
   return {
     post: null, //remove this till i figure out what used it.
     stream: function () {
       var source = streamNotify.listen()
-      source.push(layered.getGraph())
-      return source
+      var _g = {}
+      var g = layered.getGraph()
+      //copy to legacy style graph
+      for(var j in g)
+        for(var k in g[j]) {
+          _g[j] = _g[j] || {}
+          _g[j][k] =  toLegacyValue(g[j][k])
+        }
+      source.push(_g)
+      return pull(source, pull.map(function (e) {
+        return {from: e.from, to:e.to, value: toLegacyValue(e.value) }
+      }))
     },
+
     get: function (opts, cb) {
       if(!cb)
         cb = opts, opts = {}
@@ -158,23 +188,18 @@ exports.init = function (sbot, config) {
       })
     },
 
+    isFollowing: isFollowing,
+
+    isBlocking: isBlocking,
+
     createFriendStream: createFriendStream,
-//    stream: index.stream,
     //legacy, debugging
     hops: function (opts, cb) {
       if(isFunction(opts))
         cb = opts, opts = {}
       cb(null, layered.getHops())
-//      opts = opts || {}
-//      if(isString(opts))
-//        opts = {start: opts}
-//      index.get(null, function (err, g) {
-//        if(err) cb(err)
-//        else cb(null, G.hops(g, opts.start || sbot.id, 0, opts.hops || 3))
-//      })
     }
   }
 }
-
 
 
