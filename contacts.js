@@ -4,13 +4,13 @@ var Reduce = require('flumeview-reduce')
 module.exports = function (sbot, createLayer, config) {
 
   var layer = createLayer('contacts')
-
-  var g, _g
+  var initial = false
   var hops = {}
   hops[sbot.id] = 0
-  var index = sbot._flumeUse('friends', Reduce(2, function (__g, data) {
-    if(!g) {
-      layer(g = {})
+  var index = sbot._flumeUse('contacts2', Reduce(3, function (g, data) {
+    if(!initial) {
+      initial = true
+      layer(g = g || {})
     }
 
     var from = data.value.author
@@ -24,6 +24,12 @@ module.exports = function (sbot, createLayer, config) {
       return layer(from, to, value)
     return g
   }))
-}
 
+  index.value.once(function (g) {
+    if(!initial) {
+      initial = true
+      layer(g || {})
+    }
+  })
+}
 
