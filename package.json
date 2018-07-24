@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "scuttlebot": "^10.3.0",
-    "ssb-generate": "^1.0.0",
+    "ssb-generate": "^1.0.1",
     "tape": "^4.6.3"
   },
   "scripts": {
