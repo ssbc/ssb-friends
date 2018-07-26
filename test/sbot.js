@@ -16,9 +16,7 @@ tape('empty database follow self', function (t) {
   pull(
     a_bot.friends.createFriendStream(),
     pull.collect(function (err, a) {
-      var o = {}
-      o[a_bot.id] = 0
-      t.deepEqual(a, [o])
+      t.deepEqual(a, [a_bot.id])
       t.end()
     })
   )
@@ -32,12 +30,11 @@ tape('live follows works', function (t) {
   pull(
     a_bot.friends.createFriendStream({live: true, meta: true, hops: 10}),
     pull.drain(function (m) {
-      for(var k in m) a.push({id:k, hops: m[k]})
+      a.push(m)
     })
   )
 
   gen.initialize(a_bot, 10, 2, function (err, peers, hops) {
-//    console.log(peers.map(function (e) { return e.id }))
     console.log(a.length, hops)
     var seen = {}, count = 0, notSeen = {}
     peers.forEach(function (v) {
@@ -66,6 +63,11 @@ tape('live follows works', function (t) {
   })
 
 })
+
+
+
+
+
 
 
 
