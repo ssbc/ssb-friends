@@ -64,7 +64,7 @@ module.exports = function (layered) {
           for(var k in value)
             if('undefined' !== typeof value[k][opts.dest])
               _value[k] = value[k][opts.dest]
-          cb(null, mapGraph(_value, toLegacyValue))
+          cb(null, map(_value, toLegacyValue))
         }
         else
           cb(null, mapGraph(value, toLegacyValue))
