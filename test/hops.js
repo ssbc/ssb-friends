@@ -70,13 +70,50 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
             { id: feedC.id, hops: 2 }
           ])
 
-          a_bot.close()
-          t.end()
+          a_bot.friends.get(function (err, g) {
+            var G = {}
+            G[feedA.id] = {}
+            G[feedA.id][feedB.id] = true
+            G[feedB.id] = {}
+            G[feedB.id][feedC.id] = true
+            G[a_bot.id] = {}
+            G[a_bot.id][feedA.id] = true
+            G[a_bot.id][feedB.id] = true
+            t.deepEqual(g, G)
+
+            a_bot.friends.get({source: a_bot.id}, function (err, g) {
+              t.deepEqual(g, G[a_bot.id])
+
+              a_bot.friends.get({dest: feedB.id}, function (err, g) {
+                var _c = {}
+                _c[feedA.id] = true
+                _c[a_bot.id] = true
+
+                t.deepEqual(g, _c)
+                a_bot.friends.get({source: a_bot.id, dest: feedB.id}, function (err, follows) {
+                  t.equal(follows, true)
+                  a_bot.friends.get({source: a_bot.id, dest: feedC.id}, function (err, follows) {
+                    t.equal(follows, null)
+                    a_bot.close()
+                    t.end()
+                  })
+                })
+              })
+            })
+          })
         })
       })
     })
   })
 })
+
+
+
+
+
+
+
+
 
 
 
