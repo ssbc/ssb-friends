@@ -1,7 +1,6 @@
 'use strict'
 //var G           = require('graphreduce')
 //var Reduce      = require('flumeview-reduce')
-var FlatMap     = require('pull-flatmap')
 var pull        = require('pull-stream')
 var ref         = require('ssb-ref')
 var Obv         = require('obv')
@@ -48,19 +47,18 @@ exports.init = function (sbot, config) {
   var max = config.friends && config.friends.hops || config.replicate && config.replicate.hops || 3
   var layered = LayeredGraph({max: max, start: sbot.id})
 
-  function createFriendStream (opts) {
-    var first = true
-    return pull(
-      layered.hopStream(opts),
-      FlatMap(function (change) {
-        var a = []
-        for(var k in change)
-          if(!first || change[k] >= 0)
-            a.push(opts && opts.meta ? {id: k, hops: change[k]} : k)
-        first = false
-        return a
-      })
-    )
+  function isFollowing (opts, cb) {
+    layered.onReady(function () {
+      var g = layered.getGraph()
+        cb(null, g[opts.source] && g[opts.source][opts.dest] >= 0)
+    })
+  }
+
+  function isBlocking (opts, cb) {
+    layered.onReady(function () {
+      var g = layered.getGraph()
+        cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) == -1)
+    })
   }
 
   //BLOCKING
@@ -99,20 +97,6 @@ exports.init = function (sbot, config) {
     })
   })
 
-  function isFollowing (opts, cb) {
-    layered.onReady(function () {
-      var g = layered.getGraph()
-        cb(null, g[opts.source] && g[opts.source][opts.dest] >= 0)
-    })
-  }
-
-  function isBlocking (opts, cb) {
-    layered.onReady(function () {
-      var g = layered.getGraph()
-        cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) == -1)
-    })
-  }
-
   sbot.auth.hook(function (fn, args) {
     var self = this
     isBlocking({source: sbot.id, dest: args[0]}, function (err, blocked) {
@@ -140,74 +124,19 @@ exports.init = function (sbot, config) {
 
   require('./contacts')(sbot, layered.createLayer, config)
 
-  var streamNotify = Notify()
-  layered.onEdge(function (j,k,v) {
-    streamNotify({from:j, to:k, value:toLegacyValue(v)})
-  })
-
-  function mapGraph (g, fn) {
-    var _g = {}
-    for(var j in g)
-      for(var k in g[j]) {
-        _g[j] = _g[j] || {}
-        _g[j][k] = fn(g[j][k])
-      }
-    return _g
-  }
-
-  function map(o, fn) {
-    var _o = {}
-    for(var k in o) _o[k] = fn(o[k])
-    return _o
-  }
-
-  function toLegacyValue (v) {
-    //follow and same-as are shown as follow
-    //-2 is unfollow, -1 is block.
-    return v >= 0 ? true : v === -2 ? null : v === -1 ? false : null
-  }
+  var legacy = require('./legacy')(layered)
 
   return {
     post: null, //remove this till i figure out what used it.
-    stream: function () {
-      var source = streamNotify.listen()
-      source.push(mapGraph(layered.getGraph(), toLegacyValue))
-      return source
-//      return pull(source, pull.map(function (e) {
-//        return {from: e.from, to:e.to, value: toLegacyValue(e.value) }
-//      }))
-    },
 
-    get: function (opts, cb) {
-      if(!cb)
-        cb = opts, opts = {}
-      layered.onReady(function () {
-        var value = layered.getGraph()
-        //opts is used like this in ssb-ws
-        if(opts && opts.source) {
-          value = value[opts.source]
-          if(value && opts.dest)
-            cb(null, toLegacyValue(value[opts.dest]))
-          else
-            cb(null, map(value, toLegacyValue))
-        }
-        else if( opts && opts.dest) {
-          var _value = {}
-          for(var k in value)
-            if('undefined' !== typeof value[k][opts.dest])
-              _value[k] = value[k][opts.dest]
-          cb(null, mapGraph(_value, toLegacyValue))
-        }
-        else
-          cb(null, mapGraph(value, toLegacyValue))
-      })
-    },
+    get: legacy.get,
+    createFriendStream: legacy.createFriendStream,
+    stream: legacy.stream,
 
     isFollowing: isFollowing,
 
     isBlocking: isBlocking,
 
-    createFriendStream: createFriendStream,
     //legacy, debugging
     hops: function (opts, cb) {
       if(isFunction(opts))
@@ -216,6 +145,16 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
