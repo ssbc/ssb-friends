@@ -49,12 +49,15 @@ exports.init = function (sbot, config) {
   var layered = LayeredGraph({max: max, start: sbot.id})
 
   function createFriendStream (opts) {
+    var first = true
     return pull(
       layered.hopStream(opts),
       FlatMap(function (change) {
         var a = []
         for(var k in change)
-          a.push(opts && opts.meta ? {id: k, hops: change[k]} : k)
+          if(!first || change[k] >= 0)
+            a.push(opts && opts.meta ? {id: k, hops: change[k]} : k)
+        first = false
         return a
       })
     )
@@ -96,14 +99,14 @@ exports.init = function (sbot, config) {
     })
   })
 
-  function isFollows (opts, cb) {
+  function isFollowing (opts, cb) {
     layered.onReady(function () {
       var g = layered.getGraph()
         cb(null, g[opts.source] && g[opts.source][opts.dest] >= 0)
     })
   }
 
-  function isBlocked (opts, cb) {
+  function isBlocking (opts, cb) {
     layered.onReady(function () {
       var g = layered.getGraph()
         cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) == -1)
@@ -112,7 +115,7 @@ exports.init = function (sbot, config) {
 
   sbot.auth.hook(function (fn, args) {
     var self = this
-    isBlocked({source: sbot.id, dest: args[0]}, function (err, blocked) {
+    isBlocking({source: sbot.id, dest: args[0]}, function (err, blocked) {
       if(blocked)
         args[1](new Error('client is blocked'))
       else fn.apply(self, args)
@@ -139,8 +142,24 @@ exports.init = function (sbot, config) {
 
   var streamNotify = Notify()
   layered.onEdge(function (j,k,v) {
-    streamNotify({from:j, to:k, value:v})
+    streamNotify({from:j, to:k, value:toLegacyValue(v)})
   })
+
+  function mapGraph (g, fn) {
+    var _g = {}
+    for(var j in g)
+      for(var k in g[j]) {
+        _g[j] = _g[j] || {}
+        _g[j][k] = fn(g[j][k])
+      }
+    return _g
+  }
+
+  function map(o, fn) {
+    var _o = {}
+    for(var k in o) _o[k] = fn(o[k])
+    return _o
+  }
 
   function toLegacyValue (v) {
     //follow and same-as are shown as follow
@@ -152,18 +171,11 @@ exports.init = function (sbot, config) {
     post: null, //remove this till i figure out what used it.
     stream: function () {
       var source = streamNotify.listen()
-      var _g = {}
-      var g = layered.getGraph()
-      //copy to legacy style graph
-      for(var j in g)
-        for(var k in g[j]) {
-          _g[j] = _g[j] || {}
-          _g[j][k] =  toLegacyValue(g[j][k])
-        }
-      source.push(_g)
-      return pull(source, pull.map(function (e) {
-        return {from: e.from, to:e.to, value: toLegacyValue(e.value) }
-      }))
+      source.push(mapGraph(layered.getGraph(), toLegacyValue))
+      return source
+//      return pull(source, pull.map(function (e) {
+//        return {from: e.from, to:e.to, value: toLegacyValue(e.value) }
+//      }))
     },
 
     get: function (opts, cb) {
@@ -175,16 +187,19 @@ exports.init = function (sbot, config) {
         if(opts && opts.source) {
           value = value[opts.source]
           if(value && opts.dest)
-            value = value[opts.dest]
+            cb(null, toLegacyValue(value[opts.dest]))
+          else
+            cb(null, map(value, toLegacyValue))
         }
         else if( opts && opts.dest) {
           var _value = {}
           for(var k in value)
             if('undefined' !== typeof value[k][opts.dest])
               _value[k] = value[k][opts.dest]
-          return cb(null, _value)
+          cb(null, mapGraph(_value, toLegacyValue))
         }
-        cb(null, value)
+        else
+          cb(null, mapGraph(value, toLegacyValue))
       })
     },
 
@@ -201,5 +216,7 @@ exports.init = function (sbot, config) {
     }
   }
 }
+
+
 
 
