@@ -1,4 +1,5 @@
 var Reduce = require('flumeview-reduce')
+var isFeed = require('ssb-ref').isFeed
 //track contact messages, follow, unfollow, block
 
 module.exports = function (sbot, createLayer, config) {
@@ -7,7 +8,7 @@ module.exports = function (sbot, createLayer, config) {
   var initial = false
   var hops = {}
   hops[sbot.id] = 0
-  var index = sbot._flumeUse('contacts2', Reduce(3, function (g, data) {
+  var index = sbot._flumeUse('contacts2', Reduce(4, function (g, data) {
     if(!initial) {
       initial = true
       layer(g = g || {})
@@ -20,7 +21,7 @@ module.exports = function (sbot, createLayer, config) {
       data.value.content.following === false ? -2 :
       data.value.content.blocking || data.value.content.flagged ? -1
       : null
-    if(from && to && value != null)
+    if(isFeed(from) && isFeed(to) && value != null)
       return layer(from, to, value)
     return g
   }))
