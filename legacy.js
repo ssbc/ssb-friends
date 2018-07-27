@@ -2,6 +2,15 @@ var FlatMap = require('pull-flatmap')
 var pull    = require('pull-stream')
 var Notify  = require('pull-notify')
 
+function createLog(message) {
+  var logged = false
+  return function () {
+    if(logged) return
+    logged = true
+    console.error(message)
+  }
+}
+
 module.exports = function (layered) {
 
   function mapGraph (g, fn) {
@@ -31,8 +40,14 @@ module.exports = function (layered) {
     streamNotify({from:j, to:k, value:toLegacyValue(v)})
   })
 
+  var log_legacy1 = createLog('ssb-friends: createFriendStream legacy api used')
+  var log_legacy2 = createLog('ssb-friends: get legacy api used')
+  var log_legacy3 = createLog('ssb-friends: stream legacy api used')
+
+
   return {
     createFriendStream: function (opts) {
+      log_legacy1()
       var first = true
       return pull(
         layered.hopStream(opts),
@@ -47,6 +62,7 @@ module.exports = function (layered) {
       )
     },
     get: function (opts, cb) {
+      log_legacy2()
       if(!cb)
         cb = opts, opts = {}
       layered.onReady(function () {
@@ -71,10 +87,15 @@ module.exports = function (layered) {
       })
     },
     stream: function () {
+      log_legacy3()
       var source = streamNotify.listen()
       source.push(mapGraph(layered.getGraph(), toLegacyValue))
       return source
     }
   }
 }
+
+
+
+
 
