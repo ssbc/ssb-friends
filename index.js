@@ -127,7 +127,9 @@ exports.init = function (sbot, config) {
   var legacy = require('./legacy')(layered)
 
   return {
-    post: null, //remove this till i figure out what used it.
+
+    hopStream: layered.hopStream,
+    onEdge: layered.onEdge,
 
     get: legacy.get,
     createFriendStream: legacy.createFriendStream,
@@ -139,10 +141,15 @@ exports.init = function (sbot, config) {
 
     //legacy, debugging
     hops: function (opts, cb) {
-      if(isFunction(opts))
-        cb = opts, opts = {}
-      cb(null, layered.getHops())
+      layered.onReady(function () {
+        if(isFunction(opts))
+          cb = opts, opts = {}
+        cb(null, layered.getHops())
+      })
     }
   }
 }
+
+
+
 
