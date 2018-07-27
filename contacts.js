@@ -9,10 +9,7 @@ module.exports = function (sbot, createLayer, config) {
   var hops = {}
   hops[sbot.id] = 0
   var index = sbot._flumeUse('contacts2', Reduce(4, function (g, data) {
-    if(!initial) {
-      initial = true
-      layer(g = g || {})
-    }
+    if(!g) g = {}
 
     var from = data.value.author
     var to = data.value.content.contact
@@ -21,16 +18,19 @@ module.exports = function (sbot, createLayer, config) {
       data.value.content.following === false ? -2 :
       data.value.content.blocking || data.value.content.flagged ? -1
       : null
-    if(isFeed(from) && isFeed(to) && value != null)
+
+    if(initial && isFeed(from) && isFeed(to) && value != null) {
       return layer(from, to, value)
+    }
     return g
   }))
 
-  index.value.once(function (g) {
-    if(!initial) {
-      initial = true
-      layer(g || {})
-    }
+  // trigger flume machinery to wait until index is ready,
+  // otherwise there is a race condition when rebuilding the graph.
+  index.get(function (err, g) {
+    initial = true
+    layer(g || {})
   })
 }
+
 
