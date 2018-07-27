@@ -146,7 +146,10 @@ exports.init = function (sbot, config) {
           cb = opts, opts = {}
         cb(null, layered.getHops())
       })
-    }
+    },
+
+    //expose createLayer, so that other plugins may express relationships
+    createLayer: layered.createLayer
   }
 }
 
