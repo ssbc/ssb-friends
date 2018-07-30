@@ -38,13 +38,53 @@ This can only be called locally by another in-process scuttlebot plugin.
 
 retrive the current hops.
 
-## isFollowing({source, dest}, cb)
+### isFollowing({source, dest}, cb)
 
 callsback true if `source` follows `dest`, false otherwise.
 
-## isBlocking({source, dest}, cb)
+### isBlocking({source, dest}, cb)
 
 callsback true if `source` blocks `dest`, false otherwise.
+
+### createLayer(name)
+
+Create a layer with `name`, this feature is exposed from [layered-graph](https://github.com/dominictarr/layered-graph)
+
+This enables plugins to provide different views on feed relationships, and then combine them together.
+
+As an example, here is code to make a view that only track old-style pub follows.
+
+``` js
+  var layer = sbot.friends.createLayer('pubs')
+  var init = false //keep track of wether we have initialized the layer.
+
+  var view = sbot._flumeUse('pubs', Reduce(1, function (g, data) {
+    g = g || {}
+    var content = data.value.content
+    if(
+      content.type === 'contact' &&
+      isFeed(content.contact) &&
+      content.following === true &&
+      content.autofollow === true
+    ) {
+      var from = data.value.author, to = content.contact
+      g[from] = g[from] || {}
+      g[from][to] = 1
+      //updating an edge in the layer should be handled within the view reduce function,
+      //but only after it has been initialized.
+      if(init) layer(from, to, 1)
+    }
+    return g
+  })
+
+  //if we call view.get like this, it will delay until this view is in sync with the main log.
+  //
+  view.get(function (err, value) {
+    init = true
+    layer(value)
+  })
+
+```
 
 ## legacy apis
 
@@ -84,4 +124,6 @@ it would look like `{<from>: {<to>: <value>}}`
 ## License
 
 MIT
+
+
 
