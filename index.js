@@ -37,13 +37,13 @@ exports.manifest = {
   get: 'async',
   createFriendStream: 'source',
   stream: 'source',
-  hops: 'async'
+  hops: 'async',
 }
 
 //mdm.manifest(apidoc)
 
 exports.init = function (sbot, config) {
-
+  
   var max = config.friends && config.friends.hops || config.replicate && config.replicate.hops || 3
   var layered = LayeredGraph({max: max, start: sbot.id})
 
@@ -152,6 +152,7 @@ exports.init = function (sbot, config) {
     createLayer: layered.createLayer
   }
 }
+
 
 
 
