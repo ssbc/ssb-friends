@@ -65,7 +65,7 @@ As an example, here is code to make a view that only track old-style pub follows
       content.type === 'contact' &&
       isFeed(content.contact) &&
       content.following === true &&
-      content.autofollow === true
+      (content.autofollow === true || content.pub === true)
     ) {
       var from = data.value.author, to = content.contact
       g[from] = g[from] || {}
