@@ -1,13 +1,13 @@
 'use strict'
-var G           = require('graphreduce')
-var Reduce      = require('flumeview-reduce')
+//var G           = require('graphreduce')
+//var Reduce      = require('flumeview-reduce')
 var pull        = require('pull-stream')
-var FlatMap     = require('pull-flatmap')
 var ref         = require('ssb-ref')
 var Obv         = require('obv')
 var pCont       = require('pull-cont/source')
-var F           = require('./alg')
-var block       = require('./block')
+var Notify      = require('pull-notify')
+
+var LayeredGraph = require('layered-graph')
 
 // friends plugin
 // methods to analyze the social graph
@@ -37,94 +37,28 @@ exports.manifest = {
   get: 'async',
   createFriendStream: 'source',
   stream: 'source',
-  hops: 'async'
+  hops: 'async',
 }
 
 //mdm.manifest(apidoc)
 
 exports.init = function (sbot, config) {
-  var g = {}
-  var index = sbot._flumeUse('friends', Reduce(2, function (g, rel) {
-    if(!g) g = {}
-    G.addEdge(g, rel.from, rel.to, rel.value)
-    return g
-  }, function (data) {
-    if(data.value.content.type === 'contact' && ref.isFeed(data.value.content.contact)) {
-      var tristate = (
-        data.value.content.following ? true
-      : data.value.content.flagged || data.value.content.blocking ? false
-      : null
-      )
-      return {
-        from: data.value.author,
-        to: data.value.content.contact,
-        value: tristate
-      }
-    }
-  }, null, g))
+  
+  var max = config.friends && config.friends.hops || config.replicate && config.replicate.hops || 3
+  var layered = LayeredGraph({max: max, start: sbot.id})
 
-  function createFriendStream (opts) {
-    opts = opts || {}
-    var live = opts.live === true
-    var meta = opts.meta === true
-    var start = opts.start || sbot.id
-    var reachable
-    //mabye this could be rewritten cleaner with
-    //index.value (an observable) instead?
+  function isFollowing (opts, cb) {
+    layered.onReady(function () {
+      var g = layered.getGraph()
+        cb(null, g[opts.source] && g[opts.source][opts.dest] >= 0)
+    })
+  }
 
-    var t = 0, count = 0, m = 0
-
-    var all = {}, COUNT = 0
-    return pull(
-      index.stream(opts),
-      pull.filter(),
-      FlatMap(function (v) {
-
-        //this code handles real time streaming of the hops map.
-        function push (to, hops) {
-          if(opts.hops == null || hops <= opts.hops) {
-            out.push(meta ? {id: to, hops: hops} : to)
-          }
-        }
-        var out = [], g = index.value.value
-
-        //the edge has already been added to g
-        if(!reachable || isEmpty(reachable)) {
-          reachable = F.reachable(g, start, block)
-          reachable[sbot.id] = [0, undefined]
-          for(var k in reachable)
-            if(block.isWanted(reachable[k]))
-              push(k, reachable[k][0])
-        }
-        else if(v.value) { //follows can be calculated cheaply!
-          var patch = F.diffReachable(g, reachable, v, block)
-          for(var k in patch) {
-            if(patch[k] == null) {
-              delete reachable[k]
-              push(k, -1)
-            }
-            else {
-              reachable[k] = patch[k]
-              push(k, patch[k][0])
-            }
-          }
-        }
-        else {
-          var _reachable = F.reachable(g, start, block)
-          _reachable[sbot.id] = [0, undefined]
-          var patch = F.diff(reachable, _reachable, block)
-          for(var k in patch) {
-            if(patch[k] == null || patch[k][0] == null || patch[k][0] > patch[k][1])
-              push(k, -1)
-            else if(block.isWanted(patch[k]))
-              push(k, patch[k][0])
-
-          }
-          reachable = _reachable
-        }
-        return out
-      })
-    )
+  function isBlocking (opts, cb) {
+    layered.onReady(function () {
+      var g = layered.getGraph()
+        cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) == -1)
+    })
   }
 
   //BLOCKING
@@ -136,9 +70,10 @@ exports.init = function (sbot, config) {
     //reminder: this.id is the remote caller.
     var self = this
     return pCont(function (cb) {
-      index.since.once(function () {
-        var g = index.value.value
-        if(g && opts.id !== id && g[opts.id] && g[opts.id][id] === false) {
+      //wait till the index has loaded.
+      layered.onReady(function () {
+        var g = layered.getGraph()
+        if(g && opts.id !== id && g[opts.id] && g[opts.id][id] === -1) {
           cb(null, function (abort, cb) {
             //just give them the cold shoulder
           })
@@ -164,9 +99,8 @@ exports.init = function (sbot, config) {
 
   sbot.auth.hook(function (fn, args) {
     var self = this
-    index.since.once(function () {
-      var g = index.value.value
-      if(g && g[sbot.id] && g[sbot.id][args[0]] === false)
+    isBlocking({source: sbot.id, dest: args[0]}, function (err, blocked) {
+      if(blocked)
         args[1](new Error('client is blocked'))
       else fn.apply(self, args)
     })
@@ -179,59 +113,46 @@ exports.init = function (sbot, config) {
     throw new Error('ssb-friends expects a replicate plugin to be available')
 
   pull(
-    createFriendStream({live: true, meta: true, hops: config.friends && config.friends.hops}),
-    // filter out duplicates, and also keep track of what we expect to receive
-    // lookup the latest sequence from each user
-    // TODO: use paramap?
+    layered.hopStream({live: true, old: true}),
     pull.drain(function (data) {
       if(data.sync) return
-      if(data.hops >= 0)
-        sbot.replicate.request(data.id)
-      else
-        sbot.replicate.request(data.id, false)
+      for(var k in data) {
+        sbot.replicate.request(k, data[k] >= 0)
+      }
     })
   )
 
+  require('./contacts')(sbot, layered.createLayer, config)
+
+  var legacy = require('./legacy')(layered)
+
   return {
-    post: index.value,
-    get: function (opts, cb) {
-      if(!cb)
-        cb = opts, opts = {}
-      index.get({}, function (err, value) {
-        if(err) return cb(err)
-        //opts is used like this in ssb-ws
-        if(opts && opts.source) {
-          value = value[opts.source]
-          if(value && opts.dest)
-            value = value[opts.dest]
-        }
-        else if( opts && opts.dest) {
-          var _value = {}
-          for(var k in value)
-            if('undefined' !== typeof value[k][opts.dest])
-              _value[k] = value[k][opts.dest]
-          return cb(null, _value)
-        }
-        cb(null, value)
+
+    hopStream: layered.hopStream,
+    onEdge: layered.onEdge,
+
+    get: legacy.get,
+    createFriendStream: legacy.createFriendStream,
+    stream: legacy.stream,
+
+    isFollowing: isFollowing,
+
+    isBlocking: isBlocking,
+
+    //legacy, debugging
+    hops: function (opts, cb) {
+      layered.onReady(function () {
+        if(isFunction(opts))
+          cb = opts, opts = {}
+        cb(null, layered.getHops())
       })
     },
 
-    createFriendStream: createFriendStream,
-    stream: index.stream,
-    //legacy, debugging
-    hops: function (opts, cb) {
-      if(isFunction(opts))
-        cb = opts, opts = {}
-      opts = opts || {}
-      if(isString(opts))
-        opts = {start: opts}
-      index.get(null, function (err, g) {
-        if(err) cb(err)
-        else cb(null, G.hops(g, opts.start || sbot.id, 0, opts.hops || 3))
-      })
-    }
+    //expose createLayer, so that other plugins may express relationships
+    createLayer: layered.createLayer
   }
 }
+
 
 
 
