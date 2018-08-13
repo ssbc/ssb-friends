@@ -8,7 +8,7 @@ module.exports = function (sbot, createLayer, config) {
   var initial = false
   var hops = {}
   hops[sbot.id] = 0
-  var index = sbot._flumeUse('contacts2', Reduce(4, function (g, data) {
+  var index = sbot._flumeUse('contacts2', Reduce(5, function (g, data) {
     if(!g) g = {}
 
     var from = data.value.author
@@ -20,8 +20,10 @@ module.exports = function (sbot, createLayer, config) {
       : null
 
     if(initial && isFeed(from) && isFeed(to) && value != null) {
-      return layer(from, to, value)
+      layer(from, to, value)
     }
+    g[from] = g[from] || {}
+    g[from][to] = value
     return g
   }))
 
