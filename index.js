@@ -117,7 +117,7 @@ exports.init = function (sbot, config) {
     pull.drain(function (data) {
       if(data.sync) return
       for(var k in data) {
-        sbot.replicate.request(k, data[k] >= 0)
+        sbot.replicate.request(k, data[k] >= 0, -data[k])
       }
     })
   )
