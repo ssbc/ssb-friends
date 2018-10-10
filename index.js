@@ -50,14 +50,14 @@ exports.init = function (sbot, config) {
   function isFollowing (opts, cb) {
     layered.onReady(function () {
       var g = layered.getGraph()
-        cb(null, g[opts.source] && g[opts.source][opts.dest] >= 0)
+      cb(null, g[opts.source] && g[opts.source][opts.dest] >= 0)
     })
   }
 
   function isBlocking (opts, cb) {
     layered.onReady(function () {
       var g = layered.getGraph()
-        cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) == -1)
+      cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) == -1)
     })
   }
 
