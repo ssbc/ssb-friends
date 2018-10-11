@@ -4,12 +4,12 @@ var createSbot = require('scuttlebot')
   .use(require('scuttlebot/plugins/replicate'))
   .use(require('../'))
 
-  var a_bot = createSbot({
-    temp: 'alice',
-    port: 45451, host: 'localhost', timeout: 20001,
-    replicate: {hops: 2, legacy: false},
-//    keys: alice
-  })
+var a_bot = createSbot({
+  temp: 'alice',
+  port: 45451, host: 'localhost', timeout: 20001,
+  replicate: {hops: 2, legacy: false},
+  //    keys: alice
+})
 
 tape('check that friends are re-emitted when distance changes when `hops: 2`', function (t) {
 
@@ -111,3 +111,38 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
   })
 })
 
+tape('blocking / unblocking works', function (t) {
+  var feedA = a_bot.createFeed()
+  var feedB = a_bot.createFeed()
+
+  feedA.publish({
+    type: 'contact',
+    contact: feedB.id,
+    following: true
+  }, function () {
+    a_bot.friends.get({source: feedA.id, dest: feedB.id}, function (err, follows) {
+      t.equal(follows, true)
+
+      feedA.publish({
+        type: 'contact',
+        contact: feedB.id,
+        blocking: true
+      }, function () {
+        a_bot.friends.get({source: feedA.id, dest: feedB.id}, function (err, follows) {
+          t.equal(follows, false)
+
+          feedA.publish({
+            type: 'contact',
+            contact: feedB.id,
+            blocking: false
+          }, function () {
+            a_bot.friends.get({source: feedA.id, dest: feedB.id}, function (err, follows) {
+              t.equal(follows, true)
+              t.end()
+            })
+          })
+        })
+      })
+    })
+  })
+})
