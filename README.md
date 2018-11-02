@@ -24,6 +24,8 @@ but you might replicate them if your friend follows them.
 this comes built into scuttlebot by default, you are probably using this api by writing a client
 app or using sbot from a cli tool.
 
+> Note: synchronous methods called over a `ssb-client` connection are converted into asynchronous methods (a callback is added as the final argument which will be called back with the result)
+
 ### hopStream () => Source
 
 return a stream of hops objects `{<id>:<dist>,...}`, the first item is the current state,
