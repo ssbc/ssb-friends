@@ -13,37 +13,23 @@ var LayeredGraph = require('layered-graph')
 // methods to analyze the social graph
 // maintains a 'follow' and 'flag' graph
 
-function isFunction (f) {
-  return 'function' === typeof f
-}
-
-function isString (s) {
-  return 'string' === typeof s
-}
-
-function isFriend (friends, a, b) {
-  return friends[a] && friends[b] && friends[a][b] && friends[b][a]
-}
-
-function isEmpty (o) {
-  for(var k in o)
-    return false
-  return true
-}
-
 exports.name = 'friends'
 exports.version = '1.0.0'
 exports.manifest = {
-  get: 'async',
-  createFriendStream: 'source',
-  stream: 'source',
+  hopStream: 'source',
+  onEdge: 'sync',
+  isFollowing: 'async',
+  isBlocking: 'async',
   hops: 'async',
+  createLayer: 'sync'
+  get: 'async',                 // legacy
+  createFriendStream: 'source', // legacy
+  stream: 'source',             // legacy
 }
 
 //mdm.manifest(apidoc)
 
 exports.init = function (sbot, config) {
-  
   var max = config.friends && config.friends.hops || config.replicate && config.replicate.hops || 3
   var layered = LayeredGraph({max: max, start: sbot.id})
 
@@ -127,19 +113,15 @@ exports.init = function (sbot, config) {
   var legacy = require('./legacy')(layered)
 
   return {
-
     hopStream: layered.hopStream,
     onEdge: layered.onEdge,
-
-    get: legacy.get,
-    createFriendStream: legacy.createFriendStream,
-    stream: legacy.stream,
-
     isFollowing: isFollowing,
-
     isBlocking: isBlocking,
 
-    //legacy, debugging
+    // expose createLayer, so that other plugins may express relationships
+    createLayer: layered.createLayer
+
+    // legacy, debugging
     hops: function (opts, cb) {
       layered.onReady(function () {
         if(isFunction(opts))
@@ -147,13 +129,30 @@ exports.init = function (sbot, config) {
         cb(null, layered.getHops())
       })
     },
-
-    //expose createLayer, so that other plugins may express relationships
-    createLayer: layered.createLayer
+    // legacy
+    get: legacy.get,
+    createFriendStream: legacy.createFriendStream,
+    stream: legacy.stream,
   }
 }
 
+// helpers
 
+function isFunction (f) {
+  return 'function' === typeof f
+}
 
+function isString (s) {
+  return 'string' === typeof s
+}
 
+function isFriend (friends, a, b) {
+  return friends[a] && friends[b] && friends[a][b] && friends[b][a]
+}
+
+function isEmpty (o) {
+  for(var k in o)
+    return false
+  return true
+}
 
