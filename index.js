@@ -1,13 +1,7 @@
 'use strict'
-//var G           = require('graphreduce')
-//var Reduce      = require('flumeview-reduce')
-var pull        = require('pull-stream')
-var ref         = require('ssb-ref')
-var Obv         = require('obv')
-var pCont       = require('pull-cont/source')
-var Notify      = require('pull-notify')
-
 var LayeredGraph = require('layered-graph')
+var pull         = require('pull-stream')
+var pCont        = require('pull-cont/source')
 
 // friends plugin
 // methods to analyze the social graph
@@ -21,10 +15,10 @@ exports.manifest = {
   isFollowing: 'async',
   isBlocking: 'async',
   hops: 'async',
-  createLayer: 'sync'
+  createLayer: 'sync',
   get: 'async',                 // legacy
   createFriendStream: 'source', // legacy
-  stream: 'source',             // legacy
+  stream: 'source'              // legacy
 }
 
 //mdm.manifest(apidoc)
@@ -119,7 +113,7 @@ exports.init = function (sbot, config) {
     isBlocking: isBlocking,
 
     // expose createLayer, so that other plugins may express relationships
-    createLayer: layered.createLayer
+    createLayer: layered.createLayer,
 
     // legacy, debugging
     hops: function (opts, cb) {
@@ -142,17 +136,17 @@ function isFunction (f) {
   return 'function' === typeof f
 }
 
-function isString (s) {
-  return 'string' === typeof s
-}
+// function isString (s) {
+//   return 'string' === typeof s
+// }
 
-function isFriend (friends, a, b) {
-  return friends[a] && friends[b] && friends[a][b] && friends[b][a]
-}
+// function isFriend (friends, a, b) {
+//   return friends[a] && friends[b] && friends[a][b] && friends[b][a]
+// }
 
-function isEmpty (o) {
-  for(var k in o)
-    return false
-  return true
-}
+// function isEmpty (o) {
+//   for(var k in o)
+//     return false
+//   return true
+// }
 
