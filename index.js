@@ -15,7 +15,7 @@ exports.manifest = {
   isFollowing: 'async',
   isBlocking: 'async',
   hops: 'async',
-  createLayer: 'sync',
+  // createLayer: 'sync',       // not exposed over RPC as returns a function
   get: 'async',                 // legacy
   createFriendStream: 'source', // legacy
   stream: 'source'              // legacy

@@ -52,7 +52,7 @@ callsback true if `source` blocks `dest`, false otherwise.
 
 Create a layer with `name`, this feature is exposed from [layered-graph](https://github.com/dominictarr/layered-graph)
 
-This enables plugins to provide different views on feed relationships, and then combine them together.
+This enables plugins to provide different views on feed relationships, and then combine them together. This method is not available remotely (over RPC).
 
 As an example, here is code to make a view that only track old-style pub follows.
 
