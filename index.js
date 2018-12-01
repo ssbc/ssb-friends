@@ -120,7 +120,7 @@ exports.init = function (sbot, config) {
       layered.onReady(function () {
         if(isFunction(opts))
           cb = opts, opts = {}
-        cb(null, layered.getHops())
+        cb(null, layered.getHops(opts))
       })
     },
     // legacy
