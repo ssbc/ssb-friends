@@ -160,7 +160,7 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
   ], t.end)
 })
 
-tape('blocking / unblocking works', function (t) {
+tape('legacy blocking / unblocking works', function (t) {
   var feedA = botA.createFeed()
   var feedB = botA.createFeed()
 
@@ -213,6 +213,41 @@ tape('blocking / unblocking works', function (t) {
       }, function (err, follows) {
         t.error(err)
         t.equal(follows, true)
+        cb()
+      })
+    }
+  ], t.end)
+})
+
+tape('hops blocking / unblocking works', function (t) {
+  var feedA = botA.createFeed()
+
+  series([
+    cb => {
+      botA.publish({
+        type: 'contact',
+        contact: feedA.id,
+        blocking: true
+      }, cb)
+    },
+    cb => {
+      botA.friends.hops(function (err, hops) {
+        t.error(err)
+        t.equal(hops[feedA.id], -1)
+        cb()
+      })
+    },
+    cb => {
+      botA.publish({
+        type: 'contact',
+        contact: feedA.id,
+        blocking: false
+      }, cb)
+    },
+    cb => {
+      botA.friends.hops(function (err, hops) {
+        t.error(err)
+        t.equal(hops[feedA.id], 2)
         cb()
       })
     }
