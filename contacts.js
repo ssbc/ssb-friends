@@ -17,7 +17,7 @@ module.exports = function (sbot, createLayer, config) {
       data.value.content.following === true ? 1 :
       data.value.content.following === false ? -2 :
       data.value.content.blocking || data.value.content.flagged ? -1
-      : null
+      : -2
 
     if(isFeed(from) && isFeed(to)) {
       if(initial) {
