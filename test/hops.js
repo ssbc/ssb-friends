@@ -153,7 +153,7 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
         dest: feedC.id
       }, function (err, follows) {
         t.error(err)
-        t.equal(follows, null)
+        t.notOk(follows)
         cb()
       })
     }
@@ -161,21 +161,21 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
 })
 
 tape('legacy blocking / unblocking works', function (t) {
-  var feedA = botA.createFeed()
-  var feedB = botA.createFeed()
+  var feedD = botA.createFeed()
+  var feedE = botA.createFeed()
 
   series([
     cb => {
-      feedA.publish({
+      feedD.publish({
         type: 'contact',
-        contact: feedB.id,
+        contact: feedE.id,
         following: true
       }, cb)
     },
     cb => {
       botA.friends.get({
-        source: feedA.id,
-        dest: feedB.id
+        source: feedD.id,
+        dest: feedE.id
       }, function (err, follows) {
         t.error(err)
         t.equal(follows, true)
@@ -183,36 +183,37 @@ tape('legacy blocking / unblocking works', function (t) {
       })
     },
     cb => {
-      feedA.publish({
+      feedD.publish({
         type: 'contact',
-        contact: feedB.id,
+        contact: feedE.id,
         blocking: true
       }, cb)
     },
     cb => {
       botA.friends.get({
-        source: feedA.id,
-        dest: feedB.id
+        source: feedD.id,
+        dest: feedE.id
       }, function (err, follows) {
         t.error(err)
-        t.equal(follows, false)
+        t.notOk(follows)
         cb()
       })
     },
     cb => {
-      feedA.publish({
+      feedD.publish({
         type: 'contact',
-        contact: feedB.id,
+        contact: feedE.id,
         blocking: false
       }, cb)
     },
     cb => {
       botA.friends.get({
-        source: feedA.id,
-        dest: feedB.id
+        source: feedD.id,
+        dest: feedE.id
       }, function (err, follows) {
         t.error(err)
-        t.equal(follows, true)
+        //should not go back to following, after unblocking
+        t.notOk(follows)
         cb()
       })
     }
@@ -220,41 +221,104 @@ tape('legacy blocking / unblocking works', function (t) {
 })
 
 tape('hops blocking / unblocking works', function (t) {
-  var feedA = botA.createFeed()
-
+  var feedF = botA.createFeed()
   series([
     cb => {
       botA.publish({
         type: 'contact',
-        contact: feedA.id,
+        contact: feedF.id,
         blocking: true
       }, cb)
     },
     cb => {
       botA.friends.hops(function (err, hops) {
         t.error(err)
-        t.equal(hops[feedA.id], -1)
+        t.equal(hops[feedF.id], -1)
         cb()
       })
     },
     cb => {
       botA.publish({
         type: 'contact',
-        contact: feedA.id,
+        contact: feedF.id,
         blocking: false
       }, cb)
     },
     cb => {
       botA.friends.hops(function (err, hops) {
         t.error(err)
-        t.equal(hops[feedA.id], 2)
+        t.equal(hops[feedF.id], -2)
         cb()
       })
     }
   ], t.end)
 })
 
+
+tape('hops blocking / unblocking works', function (t) {
+  var feedH = botA.createFeed()
+  var feedI = botA.createFeed()
+  series([
+    cb => {
+      botA.publish({
+        type: 'contact',
+        contact: feedH.id,
+        following: true
+      }, cb)
+    },
+    cb => {
+      feedH.publish({
+        type: 'contact',
+        contact: feedI.id,
+        following: true
+      }, cb)
+    },
+    cb => {
+      botA.friends.hops(function (err, hops) {
+        t.error(err)
+        t.equal(hops[feedH.id], 1)
+        t.equal(hops[feedI.id], 2)
+        cb()
+      })
+    },
+    cb => {
+      botA.publish({
+        type: 'contact',
+        contact: feedI.id,
+        blocking: true
+      }, cb)
+    },
+    cb => {
+      botA.friends.hops(function (err, hops) {
+        t.error(err)
+        t.equal(hops[feedH.id], 1)
+        t.equal(hops[feedI.id], -1)
+        cb()
+      })
+    },
+    //after unblocking, goes back to 2,
+    //because H follows.
+    cb => {
+      botA.publish({
+        type: 'contact',
+        contact: feedI.id,
+        blocking: false
+      }, cb)
+    },
+    cb => {
+      botA.friends.hops(function (err, hops) {
+        t.error(err)
+        t.equal(hops[feedH.id], 1)
+        t.equal(hops[feedI.id], 2)
+        cb()
+      })
+    }
+  ], t.end)
+})
+
+
 tape('finish tests', function (t) {
   botA.close()
   t.end()
 })
+
