@@ -8,15 +8,14 @@ module.exports = function (sbot, createLayer, config) {
   var initial = false
   var hops = {}
   hops[sbot.id] = 0
-  var index = sbot._flumeUse('contacts2', Reduce(8, function (g, data) {
+  var index = sbot._flumeUse('contacts2', Reduce(9, function (g, data) {
     if(!g) g = {}
 
     var from = data.value.author
     var to = data.value.content.contact
     var value =
-      data.value.content.following === true ? 1 :
-      data.value.content.following === false ? -2 :
-      data.value.content.blocking || data.value.content.flagged ? -1
+      data.value.content.blocking || data.value.content.flagged ? -1 :
+      data.value.content.following === true ? 1
       : -2
 
     if(isFeed(from) && isFeed(to)) {
