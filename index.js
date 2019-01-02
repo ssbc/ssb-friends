@@ -46,7 +46,7 @@ exports.init = function (sbot, config) {
   //should things like createHistoryStream instead
   //call a block prehook?
   sbot.createHistoryStream.hook(function (fn, args) {
-    var opts = args[0], id = this.id
+    var opts = args[0] || {}, id = this.id
     //reminder: this.id is the remote caller.
     var self = this
     return pCont(function (cb) {
@@ -149,4 +149,6 @@ function isFunction (f) {
 //     return false
 //   return true
 // }
+
+
 
