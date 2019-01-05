@@ -1,8 +1,8 @@
 var pull = require('pull-stream')
 var tape = require('tape')
-var createSbot = require('scuttlebot')
-  .use(require('scuttlebot/plugins/replicate'))
-  .use(require('../'))
+var createSbot = require('ssb-server')
+  .use(require('ssb-replicate'))
+  .use(require('..'))
 
 var botA = createSbot({
   temp: 'alice',
