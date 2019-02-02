@@ -75,7 +75,7 @@ tape('live follows works', function (t) {
     //    t.ok(a.length >= b.length, '1 hops')
     //    t.ok(c.length >= b.length, '2 hops')
     //
+    setImmediate(botA.close)
     t.end()
-    botA.close()
   })
 })

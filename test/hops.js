@@ -316,9 +316,7 @@ tape('hops blocking / unblocking works', function (t) {
   ], t.end)
 })
 
-
 tape('finish tests', function (t) {
-  botA.close()
+  setImmediate(botA.close)
   t.end()
 })
-

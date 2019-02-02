@@ -14,6 +14,7 @@ var createSsbServer = require('ssb-server')
   .use(require('ssb-replicate'))
   .use(require('ssb-friends'))
 
+var servers = []
 
 function sort (ary) {
   return ary.sort(function (a, b) {
@@ -53,7 +54,6 @@ function liveFriends(ssbServer) {
 }
 
 tape('construct and analyze graph', function (t) {
-
   var aliceKeys = ssbKeys.generate()
 
   var ssbServer = createSsbServer({
@@ -61,6 +61,7 @@ tape('construct and analyze graph', function (t) {
       port: 45451, host: 'localhost', timeout: 1000,
       keys: aliceKeys
     })
+  servers.push(ssbServer)
 
   var alice = ssbServer.createFeed(aliceKeys)
   var bob = ssbServer.createFeed()
@@ -120,12 +121,6 @@ tape('construct and analyze graph', function (t) {
       })
     )
   })
-
-  t.test('cleanup', function (t) {
-    ssbServer.close()
-    t.end()
-  })
-
 })
 
 tape('correctly delete edges', function (t) {
@@ -138,6 +133,7 @@ tape('correctly delete edges', function (t) {
       port: 45452, host: 'localhost', timeout: 1000,
       keys: aliceKeys
     })
+  servers.push(ssbServer)
 
   var alice = ssbServer.createFeed(aliceKeys)
   var bob   = ssbServer.createFeed()
@@ -188,13 +184,6 @@ tape('correctly delete edges', function (t) {
       })
     )
   })
-
-  t.test('cleanup', function (t) {
-    ssbServer.close()
-
-    t.end()
-  })
-
 })
 
 tape('indirect friends', function (t) {
@@ -206,6 +195,7 @@ tape('indirect friends', function (t) {
       port: 45453, host: 'localhost', timeout: 1000,
       keys: aliceKeys
     })
+  servers.push(ssbServer)
 
   var alice = ssbServer.createFeed(aliceKeys)
   var bob   = ssbServer.createFeed()
@@ -275,18 +265,8 @@ tape('indirect friends', function (t) {
     )
 
   })
-
-
-  t.test('cleanup', function (t) {
-    ssbServer.close()
-    t.end()
-  })
-
 })
 
-
-
-
-
-
-
+tape.onFinish(() => {
+  servers.map(s => setImmediate(s.close))
+})
