@@ -88,6 +88,31 @@ As an example, here is code to make a view that only track old-style pub follows
 
 ```
 
+## dynamic dijkstra
+
+Since version 3, this module is now implemented in terms of [dynamic-dijkstra](https://github.com/dominictarr/dynamic-dijkstra) (via [layered-graph](https://github.com/ssbc/layered-graph)).
+DD is about traversing graphs that have real time updates.
+
+Relations between feeds are represented as non-zero numbers, as follows:
+
+In ssb we use 1 to represent follow, -1 to represent block, -2 to represent unfollow, and 0.1
+to represent "same-as". A feed with path length 2 is a "friend of a friend" (we follow someone +1
+who follows them + 1 = 2). If you block someone, that is -1. so -2 can mean blocked by a friend or unfollowed.
+min defines a positive length to be less than the negative length with the same absolute value,
+`min(-n, n) == n` so if a friend follows someone another friend blocks, the friends follow wins,
+(but if you block them directly, that block wins over the friend's follow)
+
+`expand(length, max)` return false if `length < 0`, or `length > max`.
+
+`isAdd(v)` returns true if `v >= 0`
+
+same-as is represented by very low weights (i.e. `0.1`)  to link two devices `a, b` together,
+we have edges `a->b` and `b->a`. Low weights can also be used for delegation.
+Say, a blocklist `l` can be implemented as a node that only blocks, then someone `x` subscribes
+to that blocklist by adding edge `x->l` with a weight of `0.1`.
+
+
+
 ## legacy apis
 
 The following apis are intended to be backwards compatible with earlier versions of ssb-friends.
@@ -126,6 +151,7 @@ it would look like `{<from>: {<to>: <value>}}`
 ## License
 
 MIT
+
 
 
 
