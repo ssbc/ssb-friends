@@ -76,29 +76,31 @@ exports.init = function (sbot, config) {
   var legacy = require('./legacy')(layered)
 
   //opinion: pass the blocks to replicate.block
-  var block = (sbot.replicate && sbot.replicate.block) || (sbot.ebt && sbot.ebt.block)
-  if(block) {
-    function handleBlockUnlock(from, to, value) {
-      if (value === false) block(from, to, true)
-      else                 block(from, to, false)
-    }
-    pull(
-      legacy.stream({live: true}),
-      pull.drain(function (contacts) {
-        if(!contacts) return
+  setImmediate(function () {
+    var block = (sbot.replicate && sbot.replicate.block) || (sbot.ebt && sbot.ebt.block)
+    if(block) {
+      function handleBlockUnlock(from, to, value) {
+        if (value === false) block(from, to, true)
+        else                 block(from, to, false)
+      }
+      pull(
+        legacy.stream({live: true}),
+        pull.drain(function (contacts) {
+          if(!contacts) return
 
-        if (isFeed(contacts.from) && isFeed(contacts.to)) { // live data
-          handleBlockUnlock(contacts.from, contacts.to, contacts.value)
-        } else { // initial data
-          for (var from in contacts) {
-            var relations = contacts[from]
-            for (var to in relations)
-              handleBlockUnlock(from, to, relations[to])
+          if (isFeed(contacts.from) && isFeed(contacts.to)) { // live data
+            handleBlockUnlock(contacts.from, contacts.to, contacts.value)
+          } else { // initial data
+            for (var from in contacts) {
+              var relations = contacts[from]
+              for (var to in relations)
+                handleBlockUnlock(from, to, relations[to])
+            }
           }
-        }
-      })
-    )
-  }
+        })
+      )
+    }
+  })
 
   return {
     hopStream: layered.hopStream,
@@ -129,6 +131,7 @@ exports.init = function (sbot, config) {
 function isFunction (f) {
   return 'function' === typeof f
 }
+
 
 
 
