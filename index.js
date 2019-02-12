@@ -2,7 +2,7 @@
 var LayeredGraph = require('layered-graph')
 var pull         = require('pull-stream')
 var pCont        = require('pull-cont/source')
-
+var isFeed       = require('ssb-ref').isFeed
 // friends plugin
 // methods to analyze the social graph
 // maintains a 'follow' and 'flag' graph
@@ -45,37 +45,6 @@ exports.init = function (sbot, config) {
 
   //should things like createHistoryStream instead
   //call a block prehook?
-  sbot.createHistoryStream.hook(function (fn, args) {
-    var opts = args[0] || {}, id = this.id
-    //reminder: this.id is the remote caller.
-    var self = this
-    return pCont(function (cb) {
-      //wait till the index has loaded.
-      layered.onReady(function () {
-        var g = layered.getGraph()
-        if(g && opts.id !== id && g[opts.id] && g[opts.id][id] === -1) {
-          cb(null, function (abort, cb) {
-            //just give them the cold shoulder
-          })
-        } else
-          cb(null, pull(
-            fn.apply(self, args),
-            //break off this feed if they suddenly block
-            //the recipient.
-            pull.take(function (msg) {
-              //handle when createHistoryStream is called with keys: true
-              if(!msg.content && msg.value.content)
-                msg = msg.value
-              if(msg.content.type !== 'contact') return true
-              return !(
-                (msg.content.flagged || msg.content.blocking) &&
-                msg.content.contact === id
-              )
-            })
-          ))
-      })
-    })
-  })
 
   sbot.auth.hook(function (fn, args) {
     var self = this
@@ -106,6 +75,31 @@ exports.init = function (sbot, config) {
 
   var legacy = require('./legacy')(layered)
 
+  //opinion: pass the blocks to replicate.block
+  var block = (sbot.replicate && sbot.replicate.block) || (sbot.ebt && sbot.ebt.block)
+  if(block) {
+    function handleBlockUnlock(from, to, value) {
+      if (value === false) block(from, to, true)
+      else                 block(from, to, false)
+    }
+    pull(
+      legacy.stream({live: true}),
+      pull.drain(function (contacts) {
+        if(!contacts) return
+
+        if (isFeed(contacts.from) && isFeed(contacts.to)) { // live data
+          handleBlockUnlock(contacts.from, contacts.to, contacts.value)
+        } else { // initial data
+          for (var from in contacts) {
+            var relations = contacts[from]
+            for (var to in relations)
+              handleBlockUnlock(from, to, relations[to])
+          }
+        }
+      })
+    )
+  }
+
   return {
     hopStream: layered.hopStream,
     onEdge: layered.onEdge,
@@ -135,20 +129,6 @@ exports.init = function (sbot, config) {
 function isFunction (f) {
   return 'function' === typeof f
 }
-
-// function isString (s) {
-//   return 'string' === typeof s
-// }
-
-// function isFriend (friends, a, b) {
-//   return friends[a] && friends[b] && friends[a][b] && friends[b][a]
-// }
-
-// function isEmpty (o) {
-//   for(var k in o)
-//     return false
-//   return true
-// }
 
 
 
