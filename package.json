@@ -21,7 +21,7 @@
     "ssb-generate": "^1.0.1",
     "ssb-replicate": "github:ssbc/ssb-replicate#refactor",
     "ssb-server": "^13.5.2",
-    "tape": "^4.6.3"
+    "tape": "^4.10.0"
   },
   "scripts": {
     "test": "set -e; for t in test/*.js; do node $t; done"
