@@ -41,11 +41,7 @@ exports.init = function (sbot, config) {
     })
   }
 
-  //BLOCKING
-
-  //should things like createHistoryStream instead
-  //call a block prehook?
-
+  //opinion: do not authorize peers blocked by this node.
   sbot.auth.hook(function (fn, args) {
     var self = this
     isBlocking({source: sbot.id, dest: args[0]}, function (err, blocked) {
@@ -55,12 +51,10 @@ exports.init = function (sbot, config) {
     })
   })
 
-  // ^^ BLOCKING
-
-  // REPLICATION
   if(!sbot.replicate)
     throw new Error('ssb-friends expects a replicate plugin to be available')
 
+  // opinion: replicate with everyone within max hops (max passed to layered above ^)
   pull(
     layered.hopStream({live: true, old: true}),
     pull.drain(function (data) {
@@ -131,7 +125,4 @@ exports.init = function (sbot, config) {
 function isFunction (f) {
   return 'function' === typeof f
 }
-
-
-
 
