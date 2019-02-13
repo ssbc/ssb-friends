@@ -4,12 +4,6 @@ var tape    = require('tape')
 var u       = require('./util')
 var pull    = require('pull-stream')
 
-function sort (ary) {
-  return ary.sort(function (a, b) {
-    return a.id < b.id ? -1 : a.id === b.id ? 1 : 0
-  })
-}
-
 // create 3 feeds
 // add some of friend edges (follow, flag)
 // make sure the friends plugin analyzes correctly
@@ -30,36 +24,45 @@ function liveFriends(ssbServer) {
   return live
 }
 
+
   var aliceKeys = ssbKeys.generate()
 
   var ssbServer = createSsbServer({
-      temp:'test-friends1',
-      port: 45451, host: 'localhost', timeout: 1000,
+      temp:'test-friends2',
+      port: 45452, host: 'localhost', timeout: 1000,
       keys: aliceKeys
     })
 
   var alice = ssbServer.createFeed(aliceKeys)
-  var bob = ssbServer.createFeed()
+  var bob   = ssbServer.createFeed()
   var carol = ssbServer.createFeed()
 
-  tape('add friends, and retrive all friends for a peer', function (t) {
-    var live = liveFriends(ssbServer)
+  var live = liveFriends(ssbServer)
+
+  tape('add and delete', function (t) {
 
     cont.para([
       alice.add({
-        type: 'contact', contact: bob.id,
-        following: true,
-//        flagged: { reason: 'foo' }
+        type:'contact', contact:bob.id,
+        following: true, flagged: true
       }),
       alice.add(u.follow(carol.id)),
       bob.add(u.follow(alice.id)),
       bob.add({
         type: 'contact', contact: carol.id,
-        following: false, flagged: true
+        following: false, flagged: { reason: 'foo' }
       }),
-      carol.add(u.follow(alice.id))
-    ]) (function (err, results) {
-      if(err) throw err
+      carol.add(u.follow(alice.id)),
+      alice.add({
+        type:'contact', contact: carol.id,
+        following: false,  flagged: true
+      }),
+      alice.add({
+        type:'contact', contact: bob.id,
+        following: true,  flagged: false
+      }),
+      bob.add(u.unfollow(carol.id))
+    ]) (function () {
       ssbServer.friends.hops(function (err, hops) {
         if(err) throw err
         t.deepEqual(live, hops)
@@ -68,30 +71,13 @@ function liveFriends(ssbServer) {
     })
   })
 
-  tape('createFriendStream', function (t) {
+  tape('createFriendStream after delete', function (t) {
     pull(
       ssbServer.friends.createFriendStream(),
       pull.collect(function (err, ary) {
         t.notOk(err)
-        t.equal(ary.length, 3)
-        t.deepEqual(ary.sort(), [alice.id, bob.id, carol.id].sort())
-        t.end()
-      })
-    )
-  })
-
-  tape('createFriendStream - meta', function (t) {
-    pull(
-      ssbServer.friends.createFriendStream({meta: true}),
-      pull.collect(function (err, ary) {
-        t.notOk(err)
-        t.equal(ary.length, 3)
-        t.deepEqual(sort(ary), sort([
-          {id: alice.id, hops: 0},
-          {id: bob.id, hops: 1},
-          {id: carol.id, hops: 1}
-        ]))
-
+        t.equal(ary.length, 2)
+        t.deepEqual(ary.sort(), [alice.id, bob.id].sort())
         t.end()
       })
     )
@@ -99,8 +85,34 @@ function liveFriends(ssbServer) {
 
   tape('cleanup', function (t) {
     ssbServer.close()
+
     t.end()
   })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
