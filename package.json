@@ -19,7 +19,7 @@
   "devDependencies": {
     "run-series": "^1.1.8",
     "ssb-generate": "^1.0.1",
-    "ssb-replicate": "github:ssbc/ssb-replicate#refactor",
+    "ssb-replicate": "^1.1.0",
     "ssb-server": "^13.5.2",
     "tape": "^4.10.0"
   },
