@@ -15,6 +15,7 @@ exports.manifest = {
   isFollowing: 'async',
   isBlocking: 'async',
   hops: 'async',
+  help: 'sync',
   // createLayer: 'sync',       // not exposed over RPC as returns a function
   get: 'async',                 // legacy
   createFriendStream: 'source', // legacy
@@ -113,6 +114,7 @@ exports.init = function (sbot, config) {
         cb(null, layered.getHops(opts))
       })
     },
+    help: function () { return require('./help') },
     // legacy
     get: legacy.get,
     createFriendStream: legacy.createFriendStream,
