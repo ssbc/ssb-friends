@@ -3,20 +3,20 @@ var cont    = require('cont')
 var tape    = require('tape')
 var u       = require('./util')
 var pull    = require('pull-stream')
+var crypto  = require('crypto')
+
+var createSsbServer = require('secret-stack')({
+    caps: {shs: crypto.randomBytes(32).toString('base64')}
+  })
+  .use(require('ssb-db'))
+  .use(require('ssb-replicate'))
+  .use(require('ssb-friends'))
 
 function sort (ary) {
   return ary.sort(function (a, b) {
     return a.id < b.id ? -1 : a.id === b.id ? 1 : 0
   })
 }
-
-// create 3 feeds
-// add some of friend edges (follow, flag)
-// make sure the friends plugin analyzes correctly
-
-var createSsbServer = require('ssb-server')
-  .use(require('ssb-replicate'))
-  .use(require('ssb-friends'))
 
 function liveFriends(ssbServer) {
   var live = {}
@@ -101,6 +101,9 @@ function liveFriends(ssbServer) {
     ssbServer.close()
     t.end()
   })
+
+
+
 
 
 

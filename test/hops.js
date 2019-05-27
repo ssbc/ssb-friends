@@ -1,7 +1,12 @@
 var pull = require('pull-stream')
 var tape = require('tape')
 var series = require('run-series')
-var createSbot = require('ssb-server')
+var crypto  = require('crypto')
+
+var createSbot = require('secret-stack')({
+    caps: {shs: crypto.randomBytes(32).toString('base64')}
+  })
+  .use(require('ssb-db'))
   .use(require('ssb-replicate'))
   .use(require('..'))
 
@@ -321,4 +326,5 @@ tape('finish tests', function (t) {
   botA.close()
   t.end()
 })
+
 
