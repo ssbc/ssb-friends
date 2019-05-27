@@ -10,7 +10,7 @@ var createSsbServer = require('secret-stack')({
   })
   .use(require('ssb-db'))
   .use(require('ssb-replicate'))
-  .use(require('ssb-friends'))
+  .use(require('..'))
 
 function sort (ary) {
   return ary.sort(function (a, b) {

@@ -14,7 +14,7 @@ var createSsbServer = require('secret-stack')({
   })
   .use(require('ssb-db'))
   .use(require('ssb-replicate'))
-  .use(require('ssb-friends'))
+  .use(require('..'))
 
 function liveFriends(ssbServer) {
   var live = {}
