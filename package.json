@@ -18,9 +18,10 @@
   },
   "devDependencies": {
     "run-series": "^1.1.8",
+    "secret-stack": "^6.1.2",
+    "ssb-db": "^19.2.0",
     "ssb-generate": "^1.0.1",
     "ssb-replicate": "^1.1.0",
-    "ssb-server": "^13.5.2",
     "tape": "^4.10.0"
   },
   "scripts": {
@@ -29,3 +30,4 @@
   "author": "'Dominic Tarr' <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT"
 }
+
