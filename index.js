@@ -1,7 +1,6 @@
 'use strict'
 var LayeredGraph = require('layered-graph')
 var pull         = require('pull-stream')
-var pCont        = require('pull-cont/source')
 var isFeed       = require('ssb-ref').isFeed
 // friends plugin
 // methods to analyze the social graph
