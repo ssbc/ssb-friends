@@ -10,6 +10,7 @@
   "dependencies": {
     "flumeview-reduce": "^1.3.0",
     "layered-graph": "^1.1.1",
+    "pull-cont": "^0.1.1",
     "pull-flatmap": "0.0.1",
     "pull-notify": "^0.1.1",
     "pull-stream": "^3.6.0",
