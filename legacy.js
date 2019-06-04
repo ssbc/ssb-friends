@@ -1,6 +1,7 @@
 var FlatMap = require('pull-flatmap')
 var pull    = require('pull-stream')
 var Notify  = require('pull-notify')
+var pCont   = require('pull-cont')
 
 function createLog(message) {
   var logged = false
@@ -87,23 +88,14 @@ module.exports = function (layered) {
     },
     stream: function () {
       log_legacy3()
-      // HACK (mix) - I'm pretty sure this is a stream which only delivers one value,
-      // no updates. I've added a check to make sure it doesn't pushing something empty
+      return pCont(function (cb) {
+        layered.onReady(function () {
+          var source = streamNotify.listen()
+          source.push(mapGraph(layered.getGraph(), toLegacyValue))
 
-      var source = streamNotify.listen()
-      var legacyGraph
-
-      function pushGraph () {
-        legacyGraph = mapGraph(layered.getGraph(), toLegacyValue)
-
-        if (!isEmpty(legacyGraph)) source.push(legacyGraph)
-        else {
-          console.log('ssb-friends#stream : bummer race condition, trying again!')
-          setTimeout(pushGraph, 2e3)
-        }
-      }
-      pushGraph()
-      return source
+          cb(null, source)
+        })
+      })
     }
   }
 }
@@ -112,3 +104,4 @@ function isEmpty (obj) {
   return typeof obj === 'object' &&
     Object.keys(obj).length === 0
 }
+
