@@ -1,7 +1,6 @@
 var FlatMap = require('pull-flatmap')
 var pull    = require('pull-stream')
 var Notify  = require('pull-notify')
-var pCont   = require('pull-cont')
 
 function createLog(message) {
   var logged = false
@@ -88,14 +87,11 @@ module.exports = function (layered) {
     },
     stream: function () {
       log_legacy3()
-      return pCont(function (cb) {
-        layered.onReady(function () {
-          var source = streamNotify.listen()
-          source.push(mapGraph(layered.getGraph(), toLegacyValue))
-
-          cb(null, source)
-        })
+      var source = streamNotify.listen()
+      layered.onReady(function () {
+        source.push(mapGraph(layered.getGraph(), toLegacyValue))
       })
+      return source
     }
   }
 }
@@ -104,4 +100,9 @@ function isEmpty (obj) {
   return typeof obj === 'object' &&
     Object.keys(obj).length === 0
 }
+
+
+
+
+
 
