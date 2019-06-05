@@ -26,7 +26,8 @@ app or using sbot from a cli tool.
 
 > Note: synchronous methods called over a `ssb-client` connection are converted into asynchronous methods (a callback is added as the final argument which will be called back with the result)
 
-### get (cb)
+<!-- TODO expose this as api? (collides with legacy get)
+### getRaw (cb)
 
 get the current state of the graph. it is of the form:
 
@@ -39,7 +40,7 @@ get the current state of the graph. it is of the form:
 
 where `<dist>` is a non-zero number. (negative indicates blocking).
 a value of 1 < 1.5 is considered to mean "follows" and 0 < 0.5 is considered to mean "same as"
-
+-->
 ### hopStream () => Source
 
 return a stream of hops objects `{<id>:<dist>,...}`, the first item is the current state,
