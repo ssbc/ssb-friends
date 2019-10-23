@@ -55,6 +55,13 @@ This can only be called locally by another in-process scuttlebot plugin.
 
 retrive the current hops.
 
+you can also call this as `hops(opts, cb)`, where opts is an Object with (optional) keys : 
+
+- `start`: calculate hops from/to a different node.
+- `reverse`: return hops to start instead of from start.
+- `max`: set a different max distance. If the max is smaller than the default passed to the constructor, the output will be fastest, because it will just copy the cached value, but skip nodes at a greater distance than max.
+
+
 ### isFollowing({source, dest}, cb)
 
 callsback true if `source` follows `dest`, false otherwise.
