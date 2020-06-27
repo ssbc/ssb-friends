@@ -2,6 +2,9 @@
 var LayeredGraph = require('layered-graph')
 var pull         = require('pull-stream')
 var isFeed       = require('ssb-ref').isFeed
+var contacts     = require('./contacts')
+var _legacy      = require('./legacy')
+var help         = require('./help')
 // friends plugin
 // methods to analyze the social graph
 // maintains a 'follow' and 'flag' graph
@@ -65,9 +68,9 @@ exports.init = function (sbot, config) {
     })
   )
 
-  require('./contacts')(sbot, layered.createLayer, config)
+  contacts(sbot, layered.createLayer, config)
 
-  var legacy = require('./legacy')(layered)
+  var legacy = _legacy(layered)
 
   //opinion: pass the blocks to replicate.block
   setImmediate(function () {
@@ -113,7 +116,7 @@ exports.init = function (sbot, config) {
         cb(null, layered.getHops(opts))
       })
     },
-    help: function () { return require('./help') },
+    help: () => help,
     // legacy
     get: legacy.get,
     createFriendStream: legacy.createFriendStream,
