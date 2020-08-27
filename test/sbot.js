@@ -85,4 +85,25 @@ tape('live follows works', function (t) {
   })
 })
 
+tape('chill plugin order', t => {
+  var createSbot = require('secret-stack')({
+    caps: {shs: crypto.randomBytes(32).toString('base64')}
+  })
+    .use(require('ssb-db'))
+    .use(require('..'))
+    .use(require('ssb-replicate'))
 
+  var bot = createSbot({
+    temp: 'plugin-order',
+    port: 45457,
+    host: 'localhost',
+    timeout: 20001,
+    replicate: {
+      hops: 100,
+      legacy: false
+    }
+  })
+
+  t.true(bot, 'loads plugins in whatever order fine')
+  bot.close(t.end)
+})

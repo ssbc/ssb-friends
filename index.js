@@ -24,10 +24,8 @@ exports.manifest = {
   stream: 'source'              // legacy
 }
 
-//mdm.manifest(apidoc)
-
 exports.init = function (sbot, config) {
-  var max = config.friends && config.friends.hops || config.replicate && config.replicate.hops || 3
+  var max = (config.friends && config.friends.hops) || (config.replicate && config.replicate.hops) || 3
   var layered = LayeredGraph({max: max, start: sbot.id})
 
   function isFollowing (opts, cb) {
@@ -54,26 +52,28 @@ exports.init = function (sbot, config) {
     })
   })
 
-  if(!sbot.replicate)
-    throw new Error('ssb-friends expects a replicate plugin to be available')
-
-  // opinion: replicate with everyone within max hops (max passed to layered above ^)
-  pull(
-    layered.hopStream({live: true, old: true}),
-    pull.drain(function (data) {
-      if(data.sync) return
-      for(var k in data) {
-        sbot.replicate.request(k, data[k] >= 0)
-      }
-    })
-  )
-
   contacts(sbot, layered.createLayer, config)
 
   var legacy = _legacy(layered)
 
-  //opinion: pass the blocks to replicate.block
+  // check for ssb-replicate or similar, but with a delay so other plugins have time to be loaded
   setImmediate(function () {
+    if (!sbot.replicate) {
+      throw new Error('ssb-friends expects a replicate plugin to be available')
+    }
+
+    // opinion: replicate with everyone within max hops (max passed to layered above ^)
+    pull(
+      layered.hopStream({live: true, old: true}),
+      pull.drain(function (data) {
+        if(data.sync) return
+        for(var k in data) {
+          sbot.replicate.request(k, data[k] >= 0)
+        }
+      })
+    )
+
+    //opinion: pass the blocks to replicate.block
     var block = (sbot.replicate && sbot.replicate.block) || (sbot.ebt && sbot.ebt.block)
     if(block) {
       function handleBlockUnlock(from, to, value) {
