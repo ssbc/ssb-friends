@@ -1,6 +1,12 @@
+# Use Node.js configuration.
 language: node_js
-sudo: false
+
 node_js:
-  - 6
-  - 8
   - 10
+  - 12
+  - node # latest
+
+os:
+  - linux
+  - osx
+  - windows
