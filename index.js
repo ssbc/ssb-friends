@@ -14,7 +14,9 @@ exports.version = '1.0.0'
 exports.manifest = {
   hopStream: 'source',
   onEdge: 'sync',
+  follow: 'async',
   isFollowing: 'async',
+  blocl: 'async',
   isBlocking: 'async',
   hops: 'async',
   help: 'sync',
@@ -102,14 +104,40 @@ exports.init = function (sbot, config) {
   return {
     hopStream: layered.hopStream,
     onEdge: layered.onEdge,
+    follow (feedId, opts, cb) {
+      if (!isFeed(feedId)) return cb(new Error(`follow requires a feedId, got ${feedId}`))
+      opts = opts || {}
+
+      const content = {
+        type: 'contact',
+        contact: feedId,
+        following: 'state' in opts ? opts.state : true,
+        recps: opts.recps
+      }
+      sbot.publish(content, cb)
+    },
+    block (feedId, opts, cb) {
+      if (!isFeed(feedId)) return cb(new Error(`follow requires a feedId, got ${feedId}`))
+      opts = opts || {}
+
+      const content = {
+        type: 'contact',
+        contact: feedId,
+        blocking: 'state' in opts ? opts.state : true,
+        reason: typeof opts.reason === 'string' ? opts.reason : undefined,
+        recps: opts.recps
+      }
+      sbot.publish(content, cb)
+    },
     isFollowing: isFollowing,
+    // block,
     isBlocking: isBlocking,
 
     // expose createLayer, so that other plugins may express relationships
     createLayer: layered.createLayer,
 
     // legacy, debugging
-    hops: function (opts, cb) {
+    hops (opts, cb) {
       layered.onReady(function () {
         if (typeof opts === 'function') {
           cb = opts

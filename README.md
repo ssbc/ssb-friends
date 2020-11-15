@@ -19,9 +19,9 @@ but you might replicate them if your friend follows them.
   but their friends won't be (this is to stop sybil swarms)
 
 
-## api
+## API
 
-this comes built into scuttlebot by default, you are probably using this api by writing a client
+this comes built into `ssb-server` by default, you are probably using this api by writing a client
 app or using sbot from a cli tool.
 
 > Note: synchronous methods called over a `ssb-client` connection are converted into asynchronous methods (a callback is added as the final argument which will be called back with the result)
@@ -41,36 +41,61 @@ get the current state of the graph. it is of the form:
 where `<dist>` is a non-zero number. (negative indicates blocking).
 a value of 1 < 1.5 is considered to mean "follows" and 0 < 0.5 is considered to mean "same as"
 -->
-### hopStream () => Source
+
+### `ssb.friends.hopStream () => Source`
 
 return a stream of hops objects `{<id>:<dist>,...}`, the first item is the current state,
 any following objects are updates caused by someone in your network following, unfollowing or blocking someone.
 
-### onEdge (fn) => removeListener
+### `ssb.friends.onEdge (fn) => removeListener`
 
 subscribe to changes in the graph.
 This can only be called locally by another in-process scuttlebot plugin.
 
-### hops (cb)
+### `ssb.friends.hops(cb)`
 
-retrive the current hops.
+retrive the current hops state, which is an Object of form
+```
+{
+  FeedId: distance // distance from you in hops
+}
+```
 
-you can also call this as `hops(opts, cb)`, where opts is an Object with (optional) keys : 
+**Advanved**
+you can call this method with signature`hops(opts, cb)`, where opts is an Object with (optional) keys : 
 
 - `start`: calculate hops from/to a different node.
 - `reverse`: return hops to start instead of from start.
 - `max`: set a different max distance. If the max is smaller than the default passed to the constructor, the output will be fastest, because it will just copy the cached value, but skip nodes at a greater distance than max.
 
 
-### isFollowing({source, dest}, cb)
+### `ssb.friends.follow(feedId, opts, cb)`
 
-callsback true if `source` follows `dest`, false otherwise.
+publishes a contact message asserting your current following state for `feedId`
 
-### isBlocking({source, dest}, cb)
+`opts` is an Object with (optional) properties:
+- `state` *Boolean* - whether you are saying you are asserting (or undoing) a follow. (Default: `true`)
+- `recps` *Array* - an array of recipients in case you want to publish this follow privately to some feeds / groups (see e.g. `ssb-tribes`)
 
-callsback true if `source` blocks `dest`, false otherwise.
+### `ssb.friends.isFollowing({source, dest}, cb)`
 
-### createLayer(name)
+calls back true if `source` follows `dest`, false otherwise.
+
+
+### `ssb.friends.block(feedId, opts, cb)`
+
+publishes a contact message asserting your current following state for `feedId`
+
+`opts` is an Object with (optional) properties:
+- `state` *Boolean* - whether you are saying you are asserting (or undoing) a block. (Default: `true`)
+- `reason` *String* - a description about why you're blocking (or unblocking) this account
+- `recps` *Array* - an array of recipients in case you want to publish this block privately to some feeds / groups (see e.g. `ssb-tribes`)
+
+### `ssb.friends.isBlocking({source, dest}, cb)`
+
+calls back true if `source` blocks `dest`, false otherwise.
+
+### ssb.friends.createLayer(name)`
 
 Create a layer with `name`, this feature is exposed from [layered-graph](https://github.com/dominictarr/layered-graph)
 
@@ -135,7 +160,7 @@ to that blocklist by adding edge `x->l` with a weight of `0.1`.
 
 
 
-## legacy apis
+## legacy API
 
 The following apis are intended to be backwards compatible with earlier versions of ssb-friends.
 They will hopefully be removed once clients have had a chance to update. It's recommended to
@@ -173,7 +198,3 @@ it would look like `{<from>: {<to>: <value>}}`
 ## License
 
 MIT
-
-
-
-

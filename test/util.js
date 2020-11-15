@@ -1,4 +1,17 @@
 const ref = require('ssb-ref')
+const Server = require('scuttle-testbot')
+
+exports.Server = function Testbot (opts = {}) {
+  let stack = Server
+    .use(require('ssb-replicate'))
+    .use(require('..'))
+
+  if (opts.tribes === true) {
+    stack = stack.use(require('ssb-tribes'))
+  }
+
+  return stack(opts)
+}
 
 exports.follow = function (id) {
   return {
@@ -10,9 +23,9 @@ exports.unfollow = function (id) {
     type: 'contact', contact: id, following: false
   }
 }
-exports.block = function unfollow (id) {
+exports.block = function (id) {
   return {
-    type: 'contact', contact: id, flagged: true
+    type: 'contact', contact: id, blocking: true
   }
 }
 
