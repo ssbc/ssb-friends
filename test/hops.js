@@ -1,20 +1,9 @@
 const pull = require('pull-stream')
 const tape = require('tape')
 const series = require('run-series')
-const crypto = require('crypto')
+const u = require('./util')
 
-const createSbot = require('secret-stack')({
-  caps: { shs: crypto.randomBytes(32).toString('base64') }
-})
-  .use(require('ssb-db'))
-  .use(require('ssb-replicate'))
-  .use(require('..'))
-
-const botA = createSbot({
-  temp: 'alice',
-  port: 45451,
-  host: 'localhost',
-  timeout: 20001,
+const botA = u.Server({
   replicate: {
     hops: 2,
     legacy: false

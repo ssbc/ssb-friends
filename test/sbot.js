@@ -1,19 +1,8 @@
 const pull = require('pull-stream')
 const tape = require('tape')
-const crypto = require('crypto')
+const u = require('./util')
 
-const createSbot = require('secret-stack')({
-  caps: { shs: crypto.randomBytes(32).toString('base64') }
-})
-  .use(require('ssb-db'))
-  .use(require('ssb-replicate'))
-  .use(require('..'))
-
-const botA = createSbot({
-  temp: 'alice' + Math.floor(Math.random() * 100),
-  port: 45454,
-  host: 'localhost',
-  timeout: 20001,
+const botA = u.Server({
   replicate: {
     hops: 100,
     legacy: false
@@ -87,18 +76,11 @@ tape('live follows works', function (t) {
 })
 
 tape('chill plugin order', t => {
-  const createSbot = require('secret-stack')({
-    caps: { shs: crypto.randomBytes(32).toString('base64') }
-  })
-    .use(require('ssb-db'))
+  const createSbot = require('scuttle-testbot')
     .use(require('..'))
     .use(require('ssb-replicate'))
 
   const bot = createSbot({
-    temp: 'plugin-order',
-    port: 45457,
-    host: 'localhost',
-    timeout: 20001,
     replicate: {
       hops: 100,
       legacy: false
