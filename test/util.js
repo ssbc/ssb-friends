@@ -1,4 +1,4 @@
-var ref = require('ssb-ref')
+const ref = require('ssb-ref')
 
 exports.follow = function (id) {
   return {
@@ -10,7 +10,7 @@ exports.unfollow = function (id) {
     type: 'contact', contact: id, following: false
   }
 }
-exports.block = function unfollow(id) {
+exports.block = function unfollow (id) {
   return {
     type: 'contact', contact: id, flagged: true
   }

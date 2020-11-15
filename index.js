@@ -1,10 +1,10 @@
 'use strict'
-var LayeredGraph = require('layered-graph')
-var pull         = require('pull-stream')
-var isFeed       = require('ssb-ref').isFeed
-var contacts     = require('./contacts')
-var _legacy      = require('./legacy')
-var help         = require('./help')
+const LayeredGraph = require('layered-graph')
+const pull = require('pull-stream')
+const isFeed = require('ssb-ref').isFeed
+const contacts = require('./contacts')
+const _legacy = require('./legacy')
+const help = require('./help')
 // friends plugin
 // methods to analyze the social graph
 // maintains a 'follow' and 'flag' graph
@@ -19,42 +19,43 @@ exports.manifest = {
   hops: 'async',
   help: 'sync',
   // createLayer: 'sync',       // not exposed over RPC as returns a function
-  get: 'async',                 // legacy
+  get: 'async', //                 legacy
   createFriendStream: 'source', // legacy
-  stream: 'source'              // legacy
+  stream: 'source' //              legacy
 }
 
 exports.init = function (sbot, config) {
-  var max = (config.friends && config.friends.hops) || (config.replicate && config.replicate.hops) || 3
-  var layered = LayeredGraph({max: max, start: sbot.id})
+  const max = (config.friends && config.friends.hops) || (config.replicate && config.replicate.hops) || 3
+  const layered = LayeredGraph({ max: max, start: sbot.id })
 
   function isFollowing (opts, cb) {
     layered.onReady(function () {
-      var g = layered.getGraph()
+      const g = layered.getGraph()
       cb(null, g[opts.source] ? g[opts.source][opts.dest] >= 0 : false)
     })
   }
 
   function isBlocking (opts, cb) {
     layered.onReady(function () {
-      var g = layered.getGraph()
-      cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) == -1)
+      const g = layered.getGraph()
+      cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) === -1)
     })
   }
 
-  //opinion: do not authorize peers blocked by this node.
+  // opinion: do not authorize peers blocked by this node.
   sbot.auth.hook(function (fn, args) {
-    var self = this
-    isBlocking({source: sbot.id, dest: args[0]}, function (err, blocked) {
-      if(blocked)
-        args[1](new Error('client is blocked'))
+    const self = this
+    isBlocking({ source: sbot.id, dest: args[0] }, (err, blocked) => {
+      if (err) console.error(err)
+
+      if (blocked) args[1](new Error('client is blocked'))
       else fn.apply(self, args)
     })
   })
 
   contacts(sbot, layered.createLayer, config)
 
-  var legacy = _legacy(layered)
+  const legacy = _legacy(layered)
 
   // check for ssb-replicate or similar, but with a delay so other plugins have time to be loaded
   setImmediate(function () {
@@ -64,34 +65,33 @@ exports.init = function (sbot, config) {
 
     // opinion: replicate with everyone within max hops (max passed to layered above ^)
     pull(
-      layered.hopStream({live: true, old: true}),
+      layered.hopStream({ live: true, old: true }),
       pull.drain(function (data) {
-        if(data.sync) return
-        for(var k in data) {
+        if (data.sync) return
+        for (const k in data) {
           sbot.replicate.request(k, data[k] >= 0)
         }
       })
     )
 
-    //opinion: pass the blocks to replicate.block
-    var block = (sbot.replicate && sbot.replicate.block) || (sbot.ebt && sbot.ebt.block)
-    if(block) {
-      function handleBlockUnlock(from, to, value) {
+    // opinion: pass the blocks to replicate.block
+    const block = (sbot.replicate && sbot.replicate.block) || (sbot.ebt && sbot.ebt.block)
+    if (block) {
+      function handleBlockUnlock (from, to, value) {
         if (value === false) block(from, to, true)
-        else                 block(from, to, false)
+        else block(from, to, false)
       }
       pull(
-        legacy.stream({live: true}),
+        legacy.stream({ live: true }),
         pull.drain(function (contacts) {
-          if(!contacts) return
+          if (!contacts) return
 
           if (isFeed(contacts.from) && isFeed(contacts.to)) { // live data
             handleBlockUnlock(contacts.from, contacts.to, contacts.value)
           } else { // initial data
-            for (var from in contacts) {
-              var relations = contacts[from]
-              for (var to in relations)
-                handleBlockUnlock(from, to, relations[to])
+            for (const from in contacts) {
+              const relations = contacts[from]
+              for (const to in relations) { handleBlockUnlock(from, to, relations[to]) }
             }
           }
         })
@@ -111,8 +111,10 @@ exports.init = function (sbot, config) {
     // legacy, debugging
     hops: function (opts, cb) {
       layered.onReady(function () {
-        if(isFunction(opts))
-          cb = opts, opts = {}
+        if (typeof opts === 'function') {
+          cb = opts
+          opts = {}
+        }
         cb(null, layered.getHops(opts))
       })
     },
@@ -120,13 +122,6 @@ exports.init = function (sbot, config) {
     // legacy
     get: legacy.get,
     createFriendStream: legacy.createFriendStream,
-    stream: legacy.stream,
+    stream: legacy.stream
   }
 }
-
-// helpers
-
-function isFunction (f) {
-  return 'function' === typeof f
-}
-

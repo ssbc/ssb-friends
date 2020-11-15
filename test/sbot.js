@@ -1,15 +1,15 @@
-var pull = require('pull-stream')
-var tape = require('tape')
-var crypto  = require('crypto')
+const pull = require('pull-stream')
+const tape = require('tape')
+const crypto = require('crypto')
 
-var createSbot = require('secret-stack')({
-    caps: {shs: crypto.randomBytes(32).toString('base64')}
-  })
+const createSbot = require('secret-stack')({
+  caps: { shs: crypto.randomBytes(32).toString('base64') }
+})
   .use(require('ssb-db'))
   .use(require('ssb-replicate'))
   .use(require('..'))
 
-var botA = createSbot({
+const botA = createSbot({
   temp: 'alice' + Math.floor(Math.random() * 100),
   port: 45454,
   host: 'localhost',
@@ -31,10 +31,10 @@ tape('empty database follow self', function (t) {
   )
 })
 
-var gen = require('ssb-generate')
+const gen = require('ssb-generate')
 
 tape('live follows works', function (t) {
-  var a = []
+  const a = []
 
   pull(
     botA.friends.createFriendStream({
@@ -52,9 +52,9 @@ tape('live follows works', function (t) {
 
     console.log(a.length, hops)
 
-    var seen = {}
-    var count = 0
-    var notSeen = {}
+    const seen = {}
+    let count = 0
+    const notSeen = {}
 
     peers.forEach(function (v) {
       notSeen[v.id] = true
@@ -70,7 +70,7 @@ tape('live follows works', function (t) {
 
     botA.friends.hops(function (err, hops) {
       if (err) throw err
-      for (var k in notSeen) { console.log('NS', k, hops[k]) }
+      for (const k in notSeen) { console.log('NS', k, hops[k]) }
 
       t.deepEqual(notSeen, {})
       t.deepEqual(count, peers.length, 'all peers streamed')
@@ -87,14 +87,14 @@ tape('live follows works', function (t) {
 })
 
 tape('chill plugin order', t => {
-  var createSbot = require('secret-stack')({
-    caps: {shs: crypto.randomBytes(32).toString('base64')}
+  const createSbot = require('secret-stack')({
+    caps: { shs: crypto.randomBytes(32).toString('base64') }
   })
     .use(require('ssb-db'))
     .use(require('..'))
     .use(require('ssb-replicate'))
 
-  var bot = createSbot({
+  const bot = createSbot({
     temp: 'plugin-order',
     port: 45457,
     host: 'localhost',

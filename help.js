@@ -1,4 +1,4 @@
-var SourceDest = {
+const SourceDest = {
   source: {
     type: 'FeedId',
     description: 'the feed which posted the contact message'
@@ -9,22 +9,22 @@ var SourceDest = {
   }
 }
 
-var HopsOpts = {
+const HopsOpts = {
   start: {
     type: 'FeedId',
     description: 'feed at which to start traversing graph from, default to your own feed id'
   },
   max: {
     type: 'number',
-    description: 'include feeds less than or equal to this number of hops',
+    description: 'include feeds less than or equal to this number of hops'
   }
 }
 
-var StreamOpts = Object.assign(
+const StreamOpts = Object.assign(
   HopsOpts, {
     live: {
       type: 'boolean',
-      description: 'include real time results, defaults to false',
+      description: 'include real time results, defaults to false'
     },
     old: {
       type: 'boolean',
@@ -71,9 +71,6 @@ module.exports = {
       type: 'source',
       description: 'same as `stream`, but output is series of `{id: <FeedId>, hops: <hops>}`',
       args: StreamOpts
-    },
+    }
   }
 }
-
-
-

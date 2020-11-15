@@ -1,16 +1,16 @@
-var pull = require('pull-stream')
-var tape = require('tape')
-var series = require('run-series')
-var crypto  = require('crypto')
+const pull = require('pull-stream')
+const tape = require('tape')
+const series = require('run-series')
+const crypto = require('crypto')
 
-var createSbot = require('secret-stack')({
-    caps: {shs: crypto.randomBytes(32).toString('base64')}
-  })
+const createSbot = require('secret-stack')({
+  caps: { shs: crypto.randomBytes(32).toString('base64') }
+})
   .use(require('ssb-db'))
   .use(require('ssb-replicate'))
   .use(require('..'))
 
-var botA = createSbot({
+const botA = createSbot({
   temp: 'alice',
   port: 45451,
   host: 'localhost',
@@ -22,8 +22,8 @@ var botA = createSbot({
 })
 
 tape('check that friends are re-emitted when distance changes when `hops: 2`', function (t) {
-  var changes = []
-  var hops = {}
+  const changes = []
+  const hops = {}
 
   // currently, the legacy api has a thing were it sends `{id: sbot.id, hops: 0}` twice,
   // just gonna make the test more forgiving for now.
@@ -41,9 +41,9 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
     })
   )
 
-  var feedA = botA.createFeed()
-  var feedB = botA.createFeed()
-  var feedC = botA.createFeed()
+  const feedA = botA.createFeed()
+  const feedB = botA.createFeed()
+  const feedC = botA.createFeed()
 
   series([
     // feedA -> feedB
@@ -97,7 +97,7 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
         { id: feedC.id, hops: 2 }
       ])
 
-      var G = {}
+      const G = {}
 
       series([
         cb => {
@@ -133,7 +133,7 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
       }, function (err, g) {
         t.error(err)
 
-        var _c = {}
+        const _c = {}
         _c[feedA.id] = true
         _c[botA.id] = true
 
@@ -166,8 +166,8 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
 })
 
 tape('legacy blocking / unblocking works', function (t) {
-  var feedD = botA.createFeed()
-  var feedE = botA.createFeed()
+  const feedD = botA.createFeed()
+  const feedE = botA.createFeed()
 
   series([
     cb => {
@@ -217,7 +217,7 @@ tape('legacy blocking / unblocking works', function (t) {
         dest: feedE.id
       }, function (err, follows) {
         t.error(err)
-        //should not go back to following, after unblocking
+        // should not go back to following, after unblocking
         t.notOk(follows)
         cb()
       })
@@ -226,7 +226,7 @@ tape('legacy blocking / unblocking works', function (t) {
 })
 
 tape('hops blocking / unblocking works', function (t) {
-  var feedF = botA.createFeed()
+  const feedF = botA.createFeed()
   series([
     cb => {
       botA.publish({
@@ -259,10 +259,9 @@ tape('hops blocking / unblocking works', function (t) {
   ], t.end)
 })
 
-
 tape('hops blocking / unblocking works', function (t) {
-  var feedH = botA.createFeed()
-  var feedI = botA.createFeed()
+  const feedH = botA.createFeed()
+  const feedI = botA.createFeed()
   series([
     cb => {
       botA.publish({
@@ -301,8 +300,8 @@ tape('hops blocking / unblocking works', function (t) {
         cb()
       })
     },
-    //after unblocking, goes back to 2,
-    //because H follows.
+    // after unblocking, goes back to 2,
+    // because H follows.
     cb => {
       botA.publish({
         type: 'contact',
@@ -321,10 +320,7 @@ tape('hops blocking / unblocking works', function (t) {
   ], t.end)
 })
 
-
 tape('finish tests', function (t) {
   botA.close()
   t.end()
 })
-
-
