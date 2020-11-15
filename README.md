@@ -61,7 +61,7 @@ retrive the current hops state, which is an Object of form
 }
 ```
 
-**Advanved**
+**Advanced**
 you can call this method with signature`hops(opts, cb)`, where opts is an Object with (optional) keys : 
 
 - `start`: calculate hops from/to a different node.

@@ -16,7 +16,7 @@ exports.manifest = {
   onEdge: 'sync',
   follow: 'async',
   isFollowing: 'async',
-  blocl: 'async',
+  block: 'async',
   isBlocking: 'async',
   hops: 'async',
   help: 'sync',
