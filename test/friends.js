@@ -34,7 +34,7 @@ function liveFriends(ssbServer) {
 
   var ssbServer = createSsbServer({
       temp:'test-friends1',
-      port: 45451, host: 'localhost', timeout: 1000,
+      port: 45453, host: 'localhost', timeout: 1000,
       keys: aliceKeys
     })
 

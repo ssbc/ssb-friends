@@ -10,8 +10,8 @@ var createSbot = require('secret-stack')({
   .use(require('..'))
 
 var botA = createSbot({
-  temp: 'alice',
-  port: 45451,
+  temp: 'alice' + Math.floor(Math.random() * 100),
+  port: 45454,
   host: 'localhost',
   timeout: 20001,
   replicate: {
@@ -48,7 +48,7 @@ tape('live follows works', function (t) {
   )
 
   gen.initialize(botA, 10, 2, function (err, peers, hops) {
-    t.error(err)
+    t.error(err, 'initialize test data')
 
     console.log(a.length, hops)
 
@@ -69,19 +69,20 @@ tape('live follows works', function (t) {
     })
 
     botA.friends.hops(function (err, hops) {
-      t.error(err)
+      if (err) throw err
       for (var k in notSeen) { console.log('NS', k, hops[k]) }
-    })
 
-    t.deepEqual(notSeen, {})
-    t.deepEqual(count, peers.length, 'all peers streamed')
-    //    b.forEach(function (e) { t.ok(e.hops <= 1, 'b '+e.hops+' hops <= 1') })
-    //    c.forEach(function (e) { t.ok(e.hops <= 2, 'c '+e.hops+' hops <= 2') })
-    //    t.ok(a.length >= b.length, '1 hops')
-    //    t.ok(c.length >= b.length, '2 hops')
-    //
-    t.end()
-    botA.close()
+      t.deepEqual(notSeen, {})
+      t.deepEqual(count, peers.length, 'all peers streamed')
+      //    b.forEach(function (e) { t.ok(e.hops <= 1, 'b '+e.hops+' hops <= 1') })
+      //    c.forEach(function (e) { t.ok(e.hops <= 2, 'c '+e.hops+' hops <= 2') })
+      //    t.ok(a.length >= b.length, '1 hops')
+      //    t.ok(c.length >= b.length, '2 hops')
+      //
+      botA.close(err => {
+        t.end(err, 'botA closed')
+      })
+    })
   })
 })
 
@@ -105,5 +106,8 @@ tape('chill plugin order', t => {
   })
 
   t.true(bot, 'loads plugins in whatever order fine')
-  bot.close(t.end)
+  bot.close(err => {
+    t.error(err, 'close bot')
+    t.end()
+  })
 })

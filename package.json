@@ -3,6 +3,10 @@
   "description": "",
   "version": "4.2.1",
   "homepage": "https://github.com/ssbc/ssb-friends",
+  "scripts": {
+    "test": "tape test/*.js | tap-spec",
+    "lint": "standard --fix"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/ssbc/ssb-friends.git"
@@ -18,13 +22,12 @@
   "devDependencies": {
     "run-series": "^1.1.8",
     "secret-stack": "^6.1.2",
-    "ssb-db": "^19.2.0",
+    "ssb-db": "^20.3.0",
     "ssb-generate": "^1.0.1",
     "ssb-replicate": "^1.1.0",
+    "standard": "^16.0.2",
+    "tap-spec": "^5.0.0",
     "tape": "^4.10.0"
-  },
-  "scripts": {
-    "test": "set -e; for t in test/*.js; do node $t; done"
   },
   "author": "'Dominic Tarr' <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT"
