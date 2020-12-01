@@ -42,10 +42,18 @@ where `<dist>` is a non-zero number. (negative indicates blocking).
 a value of 1 < 1.5 is considered to mean "follows" and 0 < 0.5 is considered to mean "same as"
 -->
 
-### `ssb.friends.hopStream () => Source`
+### `ssb.friends.hopStream (opts) => Source`
 
 return a stream of hops objects `{<id>:<dist>,...}`, the first item is the current state,
 any following objects are updates caused by someone in your network following, unfollowing or blocking someone.
+
+`opts` is an optional Object with keys:
+```js
+{
+  live: Boolean,
+  old: Boolean
+}
+```
 
 ### `ssb.friends.onEdge (fn) => removeListener`
 
