@@ -5,8 +5,6 @@ const isFeed = require('ssb-ref').isFeed
 module.exports = function (sbot, createLayer, config) {
   const layer = createLayer('contacts')
   let initial = false
-  const hops = {}
-  hops[sbot.id] = 0
 
   const INDEX_VERSION = 10
   const index = sbot._flumeUse('contacts2', Reduce(INDEX_VERSION, function (g, data) {
