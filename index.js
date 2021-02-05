@@ -3,8 +3,14 @@ const LayeredGraph = require('layered-graph')
 const pull = require('pull-stream')
 const isFeed = require('ssb-ref').isFeed
 const contacts = require('./contacts')
+const db2Contacts = require('./db2-contacts')
 const _legacy = require('./legacy')
 const help = require('./help')
+
+// glue
+const authGlue = require('./glue/auth')
+const replicateEBTGlue = require('./glue/replicate')
+
 // friends plugin
 // methods to analyze the social graph
 // maintains a 'follow' and 'flag' graph
@@ -44,62 +50,19 @@ exports.init = function (sbot, config) {
     })
   }
 
-  // opinion: do not authorize peers blocked by this node.
-  sbot.auth.hook(function (fn, args) {
-    const self = this
-    isBlocking({ source: sbot.id, dest: args[0] }, (err, blocked) => {
-      if (err) console.error(err)
-
-      if (blocked) args[1](new Error('client is blocked'))
-      else fn.apply(self, args)
-    })
-  })
-
-  contacts(sbot, layered.createLayer, config)
+  if (sbot.db)
+    db2Contacts(sbot, layered.createLayer, config)
+  else
+    contacts(sbot, layered.createLayer, config)
 
   const legacy = _legacy(layered)
 
-  // check for ssb-replicate or similar, but with a delay so other plugins have time to be loaded
-  setImmediate(function () {
-    if (!sbot.replicate) {
-      throw new Error('ssb-friends expects a replicate plugin to be available')
-    }
+  // glue modules together
+  if (config.friends && config.friends.hookAuth !== false)
+    authGlue(sbot, isBlocking)
 
-    // opinion: replicate with everyone within max hops (max passed to layered above ^)
-    pull(
-      layered.hopStream({ live: true, old: true }),
-      pull.drain(function (data) {
-        if (data.sync) return
-        for (const k in data) {
-          sbot.replicate.request(k, data[k] >= 0)
-        }
-      })
-    )
-
-    // opinion: pass the blocks to replicate.block
-    const block = (sbot.replicate && sbot.replicate.block) || (sbot.ebt && sbot.ebt.block)
-    if (block) {
-      function handleBlockUnlock (from, to, value) {
-        if (value === false) block(from, to, true)
-        else block(from, to, false)
-      }
-      pull(
-        legacy.stream({ live: true }),
-        pull.drain(function (contacts) {
-          if (!contacts) return
-
-          if (isFeed(contacts.from) && isFeed(contacts.to)) { // live data
-            handleBlockUnlock(contacts.from, contacts.to, contacts.value)
-          } else { // initial data
-            for (const from in contacts) {
-              const relations = contacts[from]
-              for (const to in relations) { handleBlockUnlock(from, to, relations[to]) }
-            }
-          }
-        })
-      )
-    }
-  })
+  if (config.friends && config.friends.hookReplicate !== false)
+    replicateEBTGlue(sbot, layered)
 
   return {
     hopStream: layered.hopStream,
@@ -130,7 +93,6 @@ exports.init = function (sbot, config) {
       sbot.publish(content, cb)
     },
     isFollowing: isFollowing,
-    // block,
     isBlocking: isBlocking,
 
     // expose createLayer, so that other plugins may express relationships
@@ -138,12 +100,16 @@ exports.init = function (sbot, config) {
 
     // legacy, debugging
     hops (opts, cb) {
+      if (typeof opts === 'function') {
+        cb = opts
+        opts = {}
+      }
+
       layered.onReady(function () {
-        if (typeof opts === 'function') {
-          cb = opts
-          opts = {}
-        }
-        cb(null, layered.getHops(opts))
+        if (sbot.db)
+          sbot.db.onDrain('contacts', () => cb(null, layered.getHops(opts)))
+        else
+          cb(null, layered.getHops(opts))
       })
     },
     help: () => help,

@@ -6,9 +6,8 @@ exports.Server = function Testbot (opts = {}) {
     .use(require('ssb-replicate'))
     .use(require('..'))
 
-  if (opts.tribes === true) {
+  if (opts.tribes === true)
     stack = stack.use(require('ssb-tribes'))
-  }
 
   return stack(opts)
 }
