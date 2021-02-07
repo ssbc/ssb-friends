@@ -164,14 +164,21 @@ module.exports = function (sbot, createLayer, config) {
           const relation = data[i]
 
           if (relation.key !== '\x00' && relation.key !== 'feeds') {
-            const feed = feeds[parseInt(relation.key, 10)]
+            const feedIndex = parseInt(relation.key, 10)
+            const feed = feeds[feedIndex]
             const feedFollowStatus = result[feed] || {}
+            const feedIndexValues = feedValues[feedIndex] || {}
+
             let valueKeys = Object.keys(relation.value)
             for (var v = 0; v < valueKeys.length; ++v) {
-              const to = feeds[valueKeys[v]]
-              feedFollowStatus[to] = parseInt(relation.value[valueKeys[v]], 10)
+              const toIndex = valueKeys[v]
+              const to = feeds[toIndex]
+              const value = parseInt(relation.value[valueKeys[v]], 10)
+              feedIndexValues[toIndex] = feedFollowStatus[to] = value
             }
+
             result[feed] = feedFollowStatus
+            feedValues[feedIndex] = feedIndexValues
           }
         }
 

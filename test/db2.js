@@ -68,11 +68,7 @@ tape('db2 friends test', function (t) {
   let live = liveFriends(sbot)
 
   cont.para([
-    addMsg(sbot.db, alice, {
-      type: 'contact',
-      contact: bob.id,
-      following: true
-    }),
+    addMsg(sbot.db, alice, u.follow(bob.id)),
     addMsg(sbot.db, alice, u.follow(carol.id)),
     addMsg(sbot.db, alice, u.follow(alice.id)),
     addMsg(sbot.db, bob, u.follow(alice.id)),
@@ -107,6 +103,64 @@ tape('db2 friends test', function (t) {
             t.deepEqual(live, hops)
             
             sbot.close(t.end)
+          })
+        })
+      })
+    })
+  })
+})
+
+tape('db2 unfollow', function (t) {
+  const alice = ssbKeys.generate()
+  const bob = ssbKeys.generate()
+  const carol = ssbKeys.generate()
+
+  rimraf.sync(dir)
+  mkdirp.sync(dir)
+
+  let sbot = Server({
+    keys: alice,
+    db2: true,
+    path: dir
+  })
+  let live = liveFriends(sbot)
+
+  cont.para([
+    addMsg(sbot.db, alice, u.follow(bob.id)),
+    addMsg(sbot.db, alice, u.follow(carol.id)),
+    addMsg(sbot.db, bob, u.follow(alice.id)),
+    addMsg(sbot.db, carol, u.follow(alice.id))
+  ])(function (err, results) {
+    sbot.friends.hops(function (err, hops) {
+      if (err) throw err
+      t.deepEqual(live, hops)
+
+      sbot.close(() => {
+        sbot = Server({
+          keys: alice,
+          db2: true,
+          path: dir
+        })
+        live = liveFriends(sbot)
+
+        addMsg(sbot.db, alice, u.unfollow(bob.id))((err) => {
+          if (err) throw err
+
+          sbot.friends.hops(function (err, hops) {
+            t.deepEqual(live, hops)
+
+            sbot.close(() => {
+              sbot = Server({
+                keys: alice,
+                db2: true,
+                path: dir
+              })
+
+              sbot.friends.hops(function (err, hopsAfter) {
+                t.deepEqual(hopsAfter, hops)
+                sbot.close(t.end)
+              })
+            })
           })
         })
       })
