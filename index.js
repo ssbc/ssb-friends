@@ -1,6 +1,5 @@
 'use strict'
 const LayeredGraph = require('layered-graph')
-const pull = require('pull-stream')
 const isFeed = require('ssb-ref').isFeed
 const contacts = require('./contacts')
 const db2Contacts = require('./db2-contacts')
