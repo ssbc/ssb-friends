@@ -61,7 +61,7 @@ exports.init = function (sbot, config) {
     authGlue(sbot, isBlocking)
 
   if (config.friends && config.friends.hookReplicate !== false)
-    replicateEBTGlue(sbot, layered)
+    replicateEBTGlue(sbot, layered, legacy)
 
   return {
     hopStream: layered.hopStream,
