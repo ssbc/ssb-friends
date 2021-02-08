@@ -1,7 +1,7 @@
 const isFeed = require('ssb-ref').isFeed
 const pull = require('pull-stream')
 
-module.exports = function (sbot, layered) {
+module.exports = function (sbot, layered, legacy) {
   // check for ssb-replicate or similar, but with a delay so other plugins have time to be loaded
   setImmediate(function () {
     if (!sbot.replicate) {
