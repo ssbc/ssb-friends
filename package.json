@@ -20,7 +20,7 @@
     "pull-level": "^2.0.4",
     "pull-notify": "^0.1.1",
     "pull-stream": "^3.6.0",
-    "ssb-db2": "^1.9.1",
+    "ssb-db2": "^1.14.0",
     "ssb-ref": "^2.7.1"
   },
   "devDependencies": {

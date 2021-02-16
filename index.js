@@ -50,7 +50,7 @@ exports.init = function (sbot, config) {
   }
 
   if (sbot.db)
-    db2Contacts(sbot, layered.createLayer, config)
+    sbot.db.registerIndex(db2Contacts(layered.createLayer))
   else
     contacts(sbot, layered.createLayer, config)
 
