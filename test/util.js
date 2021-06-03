@@ -27,6 +27,11 @@ exports.block = function (id) {
     type: 'contact', contact: id, blocking: true
   }
 }
+exports.unblock = function (id) {
+  return {
+    type: 'contact', contact: id, blocking: false
+  }
+}
 
 exports.pub = function (address) {
   return {
