@@ -5,7 +5,8 @@
   "homepage": "https://github.com/ssbc/ssb-friends",
   "scripts": {
     "test": "tape test/*.js | tap-spec",
-    "lint": "standard --fix"
+    "lint": "standard --fix",
+    "coverage": "nyc npm run test"
   },
   "repository": {
     "type": "git",
@@ -24,6 +25,7 @@
     "ssb-ref": "^2.7.1"
   },
   "devDependencies": {
+    "nyc": "^15.1.0",
     "run-series": "^1.1.8",
     "scuttle-testbot": "^1.3.0",
     "secret-stack": "^6.1.2",
