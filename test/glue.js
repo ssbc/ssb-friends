@@ -22,7 +22,8 @@ tape('listen to hopStream and requests replication of follows', function (t) {
               t.error(err, 'close sbot')
               t.end()
             })
-          }
+          },
+          block() { }
         }
       }
     })
