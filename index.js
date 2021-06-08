@@ -57,10 +57,10 @@ exports.init = function (sbot, config) {
   const legacy = _legacy(layered)
 
   // glue modules together
-  if (config.friends && config.friends.hookAuth !== false)
+  if (!config.friends || config.friends.hookAuth !== false)
     authGlue(sbot, isBlocking)
 
-  if (config.friends && config.friends.hookReplicate !== false)
+  if (!config.friends || config.friends.hookReplicate !== false)
     replicationGlue(sbot, layered)
 
   return {
