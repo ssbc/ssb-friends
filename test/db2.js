@@ -55,6 +55,10 @@ tape('db2 friends test', (t) => {
   let sbot = Server({
     keys: alice,
     db2: true,
+    friends: {
+      hookAuth: false,
+      hookReplicate: false
+    },
     path: dir
   })
   let live = liveFriends(sbot)
@@ -80,6 +84,10 @@ tape('db2 friends test', (t) => {
         sbot = Server({
           keys: alice,
           db2: true,
+          friends: {
+            hookAuth: false,
+            hookReplicate: false
+          },
           path: dir
         })
         live = liveFriends(sbot)
@@ -93,7 +101,6 @@ tape('db2 friends test', (t) => {
 
           sbot.db.onDrain('contacts', () => {
             t.deepEqual(live, hops)
-
             sbot.close(t.end)
           })
         })
@@ -113,6 +120,10 @@ tape('db2 unfollow', (t) => {
   let sbot = Server({
     keys: alice,
     db2: true,
+    friends: {
+      hookAuth: false,
+      hookReplicate: false
+    },
     path: dir
   })
   let live = liveFriends(sbot)
@@ -131,6 +142,10 @@ tape('db2 unfollow', (t) => {
         sbot = Server({
           keys: alice,
           db2: true,
+          friends: {
+            hookAuth: false,
+            hookReplicate: false
+          },
           path: dir
         })
         live = liveFriends(sbot)
@@ -145,6 +160,10 @@ tape('db2 unfollow', (t) => {
               sbot = Server({
                 keys: alice,
                 db2: true,
+                friends: {
+                  hookAuth: false,
+                  hookReplicate: false
+                },
                 path: dir
               })
 
