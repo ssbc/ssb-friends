@@ -1,24 +1,22 @@
+const tape = require('tape')
 const ssbKeys = require('ssb-keys')
 const cont = require('cont')
-const tape = require('tape')
-const u = require('./util')
 const pull = require('pull-stream')
+const u = require('./util')
 
 // create 3 feeds
 // add some of friend edges (follow, flag)
 // make sure the friends plugin analyzes correctly
 
 function sort (ary) {
-  return ary.sort(function (a, b) {
-    return a.id < b.id ? -1 : a.id === b.id ? 1 : 0
-  })
+  return ary.sort((a, b) => (a.id < b.id ? -1 : a.id === b.id ? 1 : 0))
 }
 
 function liveFriends (ssbServer) {
   const live = {}
   pull(
     ssbServer.friends.createFriendStream({ live: true, meta: true }),
-    pull.drain(function (friend) {
+    pull.drain((friend) => {
       if (friend.sync) return
       live[friend.id] = friend.hops
     })
@@ -38,15 +36,15 @@ const dan = ssbServer.createFeed()
 
 const live = liveFriends(ssbServer)
 
-tape('chain of friends', function (t) {
+tape('chain of friends', (t) => {
   cont.para([
     alice.add(u.follow(bob.id)),
     bob.add(u.follow(carol.id)),
     carol.add(u.follow(dan.id))
-  ])(function (err, results) {
+  ])((err, results) => {
     if (err) throw err
 
-    ssbServer.friends.hops({ hops: 3 }, function (err, all) {
+    ssbServer.friends.hops({ hops: 3 }, (err, all) => {
       if (err) throw err
       const o = {}
 
@@ -71,21 +69,21 @@ const expected = [
   { id: dan.id, hops: 3 }
 ]
 
-tape('createFriendStream on long chain', function (t) {
+tape('createFriendStream on long chain', (t) => {
   pull(
     ssbServer.friends.createFriendStream(),
-    pull.collect(function (err, ary) {
+    pull.collect((err, ary) => {
       if (err) throw err
-      t.deepEqual(ary, expected.map(function (e) { return e.id }))
+      t.deepEqual(ary, expected.map((e) => e.id))
       t.end()
     })
   )
 })
 
-tape('creatFriendStream - meta', function (t) {
+tape('creatFriendStream - meta', (t) => {
   pull(
     ssbServer.friends.createFriendStream({ meta: true }),
-    pull.collect(function (err, ary) {
+    pull.collect((err, ary) => {
       t.notOk(err)
 
       t.equal(ary.length, 4)
@@ -96,7 +94,7 @@ tape('creatFriendStream - meta', function (t) {
   )
 })
 
-tape('cleanup', function (t) {
+tape('cleanup', (t) => {
   ssbServer.close()
   t.end()
 })

@@ -1,5 +1,6 @@
-const pull = require('pull-stream')
 const tape = require('tape')
+const gen = require('ssb-generate')
+const pull = require('pull-stream')
 const u = require('./util')
 
 const botA = u.Server({
@@ -20,7 +21,6 @@ tape('empty database follow self', function (t) {
   )
 })
 
-const gen = require('ssb-generate')
 
 tape('live follows works', function (t) {
   const a = []

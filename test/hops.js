@@ -1,5 +1,5 @@
-const pull = require('pull-stream')
 const tape = require('tape')
+const pull = require('pull-stream')
 const series = require('run-series')
 const u = require('./util')
 
@@ -10,7 +10,7 @@ const botA = u.Server({
   }
 })
 
-tape('check that friends are re-emitted when distance changes when `hops: 2`', function (t) {
+tape('friends are re-emitted when distance changes when `hops: 2`', (t) => {
   const changes = []
   const hops = {}
 
@@ -22,7 +22,7 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
       meta: true,
       hops: 2
     }),
-    pull.drain(function (m) {
+    pull.drain((m) => {
       if (hops[m.id] !== m.hops) {
         changes.push(m)
       }
@@ -154,7 +154,7 @@ tape('check that friends are re-emitted when distance changes when `hops: 2`', f
   ], t.end)
 })
 
-tape('legacy blocking / unblocking works', function (t) {
+tape('legacy blocking / unblocking works', (t) => {
   const feedD = botA.createFeed()
   const feedE = botA.createFeed()
 
@@ -309,7 +309,7 @@ tape('hops blocking / unblocking works', function (t) {
   ], t.end)
 })
 
-tape('finish tests', function (t) {
+tape('finish tests', (t) => {
   botA.close()
   t.end()
 })

@@ -7,7 +7,7 @@ module.exports = function (sbot, createLayer, config) {
   let initial = false
 
   const INDEX_VERSION = 10
-  const index = sbot._flumeUse('contacts2', Reduce(INDEX_VERSION, function (g, data) {
+  const index = sbot._flumeUse('contacts2', Reduce(INDEX_VERSION, (g, data) => {
     if (!g) g = {}
 
     const from = data.value.author
@@ -28,7 +28,7 @@ module.exports = function (sbot, createLayer, config) {
 
   // trigger flume machinery to wait until index is ready,
   // otherwise there is a race condition when rebuilding the graph.
-  index.get(function (err, g) {
+  index.get((err, g) => {
     if (err) throw err
     initial = true
     layer(g || {})

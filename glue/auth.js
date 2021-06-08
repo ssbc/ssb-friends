@@ -1,11 +1,12 @@
-module.exports = function (sbot, isBlocking) {
+module.exports = function authGlue(sbot, isBlocking) {
   // opinion: do not authorize peers blocked by this node.
   sbot.auth.hook(function (fn, args) {
     const self = this
-    isBlocking({ source: sbot.id, dest: args[0] }, (err, blocked) => {
+    const [feedId, cb] = args
+    isBlocking({ source: sbot.id, dest: feedId }, (err, blocked) => {
       if (err) console.error(err)
 
-      if (blocked) args[1](new Error('client is blocked'))
+      if (blocked) cb(new Error('client is blocked'))
       else fn.apply(self, args)
     })
   })

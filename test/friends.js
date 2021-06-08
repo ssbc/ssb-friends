@@ -1,20 +1,18 @@
-const ssbKeys = require('ssb-keys')
-const cont = require('cont')
 const tape = require('tape')
-const u = require('./util')
+const cont = require('cont')
+const ssbKeys = require('ssb-keys')
 const pull = require('pull-stream')
+const u = require('./util')
 
 function sort (ary) {
-  return ary.sort(function (a, b) {
-    return a.id < b.id ? -1 : a.id === b.id ? 1 : 0
-  })
+  return ary.sort((a, b) => (a.id < b.id ? -1 : a.id === b.id ? 1 : 0))
 }
 
 function liveFriends (ssbServer) {
   const live = {}
   pull(
     ssbServer.friends.createFriendStream({ live: true, meta: true }),
-    pull.drain(function (friend) {
+    pull.drain((friend) => {
       if (friend.sync) return
       live[friend.id] = friend.hops
     })
@@ -32,7 +30,7 @@ const alice = ssbServer.createFeed(aliceKeys)
 const bob = ssbServer.createFeed()
 const carol = ssbServer.createFeed()
 
-tape('add friends, and retrive all friends for a peer', function (t) {
+tape('add friends, and retrive all friends for a peer', (t) => {
   const live = liveFriends(ssbServer)
 
   cont.para([
@@ -51,9 +49,9 @@ tape('add friends, and retrive all friends for a peer', function (t) {
       flagged: true
     }),
     carol.add(u.follow(alice.id))
-  ])(function (err, results) {
+  ])((err, results) => {
     if (err) throw err
-    ssbServer.friends.hops(function (err, hops) {
+    ssbServer.friends.hops((err, hops) => {
       if (err) throw err
       t.deepEqual(live, hops)
       t.end()
@@ -61,10 +59,10 @@ tape('add friends, and retrive all friends for a peer', function (t) {
   })
 })
 
-tape('createFriendStream', function (t) {
+tape('createFriendStream', (t) => {
   pull(
     ssbServer.friends.createFriendStream(),
-    pull.collect(function (err, ary) {
+    pull.collect((err, ary) => {
       t.notOk(err)
       t.equal(ary.length, 3)
       t.deepEqual(ary.sort(), [alice.id, bob.id, carol.id].sort())
@@ -73,24 +71,27 @@ tape('createFriendStream', function (t) {
   )
 })
 
-tape('createFriendStream - meta', function (t) {
+tape('createFriendStream - meta', (t) => {
   pull(
     ssbServer.friends.createFriendStream({ meta: true }),
-    pull.collect(function (err, ary) {
+    pull.collect((err, ary) => {
       t.notOk(err)
       t.equal(ary.length, 3)
-      t.deepEqual(sort(ary), sort([
-        { id: alice.id, hops: 0 },
-        { id: bob.id, hops: 1 },
-        { id: carol.id, hops: 1 }
-      ]))
+      t.deepEqual(
+        sort(ary),
+        sort([
+          { id: alice.id, hops: 0 },
+          { id: bob.id, hops: 1 },
+          { id: carol.id, hops: 1 },
+        ])
+      )
 
       t.end()
     })
   )
 })
 
-tape('cleanup', function (t) {
+tape('cleanup', (t) => {
   ssbServer.close()
   t.end()
 })

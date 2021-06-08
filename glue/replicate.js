@@ -1,8 +1,8 @@
 const pull = require('pull-stream')
 
-module.exports = function (sbot, layered) {
+module.exports = function replicationGlue(sbot, layered) {
   // check for ssb-replicate or similar, but with a delay so other plugins have time to be loaded
-  setImmediate(function () {
+  setImmediate(() => {
     if (!sbot.replicate) {
       throw new Error('ssb-friends expects a replicate plugin to be available')
     }

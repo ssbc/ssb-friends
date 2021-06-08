@@ -1,39 +1,37 @@
-const ssbKeys = require('ssb-keys')
-const cont = require('cont')
 const tape = require('tape')
-const u = require('./util')
+const os = require('os')
+const path = require('path')
+const cont = require('cont')
+const ssbKeys = require('ssb-keys')
 const pull = require('pull-stream')
 const validate = require('ssb-validate')
 const rimraf = require('rimraf')
 const mkdirp = require('mkdirp')
-
-const os = require('os')
-const path = require('path')
-
 const SecretStack = require('secret-stack')
 const caps = require('ssb-caps')
+const u = require('./util')
 
 function liveFriends (ssbServer) {
   const live = {}
   pull(
     ssbServer.friends.createFriendStream({ live: true, meta: true }),
-    pull.drain(function (friend) {
+    pull.drain((friend) => {
       if (friend.sync) return
       live[friend.id] = friend.hops
-    })
+    }),
   )
   return live
 }
 
-const dir = path.join(os.tmpdir(), "friends-db2")
+const dir = path.join(os.tmpdir(), 'friends-db2')
 
 rimraf.sync(dir)
 mkdirp.sync(dir)
 
 function Server(opts = {}) {
   const stack = SecretStack({ caps })
-        .use(require('ssb-db2'))
-        .use(require('..'))
+    .use(require('ssb-db2'))
+    .use(require('..'))
 
   return stack(opts)
 }
@@ -41,13 +39,7 @@ function Server(opts = {}) {
 let state = validate.initial()
 
 function addMsg(db, keys, content) {
-  state = validate.appendNew(
-    state,
-    null,
-    keys,
-    content,
-    Date.now()
-  )
+  state = validate.appendNew(state, null, keys, content, Date.now())
 
   return (cb) => {
     value = state.queue.shift().value
@@ -55,7 +47,7 @@ function addMsg(db, keys, content) {
   }
 }
 
-tape('db2 friends test', function (t) {
+tape('db2 friends test', (t) => {
   const alice = ssbKeys.generate()
   const bob = ssbKeys.generate()
   const carol = ssbKeys.generate()
@@ -79,8 +71,8 @@ tape('db2 friends test', function (t) {
       flagged: true
     }),
     addMsg(sbot.db, carol, u.follow(alice.id))
-  ])(function (err, results) {
-    sbot.friends.hops(function (err, hops) {
+  ])((err, results) => {
+    sbot.friends.hops((err, hops) => {
       if (err) throw err
       t.deepEqual(live, hops)
 
@@ -101,7 +93,7 @@ tape('db2 friends test', function (t) {
 
           sbot.db.onDrain('contacts', () => {
             t.deepEqual(live, hops)
-            
+
             sbot.close(t.end)
           })
         })
@@ -110,7 +102,7 @@ tape('db2 friends test', function (t) {
   })
 })
 
-tape('db2 unfollow', function (t) {
+tape('db2 unfollow', (t) => {
   const alice = ssbKeys.generate()
   const bob = ssbKeys.generate()
   const carol = ssbKeys.generate()
@@ -130,8 +122,8 @@ tape('db2 unfollow', function (t) {
     addMsg(sbot.db, alice, u.follow(carol.id)),
     addMsg(sbot.db, bob, u.follow(alice.id)),
     addMsg(sbot.db, carol, u.follow(alice.id))
-  ])(function (err, results) {
-    sbot.friends.hops(function (err, hops) {
+  ])((err, results) => {
+    sbot.friends.hops((err, hops) => {
       if (err) throw err
       t.deepEqual(live, hops)
 
@@ -146,7 +138,7 @@ tape('db2 unfollow', function (t) {
         addMsg(sbot.db, alice, u.unfollow(bob.id))((err) => {
           if (err) throw err
 
-          sbot.friends.hops(function (err, hops) {
+          sbot.friends.hops((err, hops) => {
             t.deepEqual(live, hops)
 
             sbot.close(() => {
@@ -156,7 +148,7 @@ tape('db2 unfollow', function (t) {
                 path: dir
               })
 
-              sbot.friends.hops(function (err, hopsAfter) {
+              sbot.friends.hops((err, hopsAfter) => {
                 t.deepEqual(hopsAfter, hops)
                 sbot.close(t.end)
               })

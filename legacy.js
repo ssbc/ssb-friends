@@ -53,7 +53,13 @@ module.exports = function (layered) {
         FlatMap(function (change) {
           const a = []
           for (const k in change) {
-            if (!first || change[k] >= 0) { a.push(opts && opts.meta ? { id: k, hops: change[k] } : k) }
+            if (!first || change[k] >= 0) {
+              if (opts && opts.meta) {
+                a.push({ id: k, hops: change[k] })
+              } else {
+                a.push(k)
+              }
+            }
           }
           first = false
           return a
@@ -71,11 +77,17 @@ module.exports = function (layered) {
         // opts is used like this in ssb-ws
         if (opts && opts.source) {
           value = value[opts.source]
-          if (value && opts.dest) { cb(null, toLegacyValue(value[opts.dest])) } else { cb(null, map(value, toLegacyValue)) }
+          if (value && opts.dest) {
+            cb(null, toLegacyValue(value[opts.dest]))
+          } else {
+            cb(null, map(value, toLegacyValue))
+          }
         } else if (opts && opts.dest) {
           const _value = {}
           for (const k in value) {
-            if (typeof value[k][opts.dest] !== 'undefined') { _value[k] = value[k][opts.dest] }
+            if (typeof value[k][opts.dest] !== 'undefined') {
+              _value[k] = value[k][opts.dest]
+            }
           }
           cb(null, map(_value, toLegacyValue))
         } else { cb(null, mapGraph(value, toLegacyValue)) }

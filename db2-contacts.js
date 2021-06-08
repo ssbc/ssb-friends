@@ -1,9 +1,7 @@
 const bipf = require('bipf')
 const pull = require('pull-stream')
 const pl = require('pull-level')
-const jsonCodec = require('flumecodec/json')
 const Plugin = require('ssb-db2/indexes/plugin')
-
 const isFeed = require('ssb-ref').isFeed
 
 const bValue = Buffer.from('value')
