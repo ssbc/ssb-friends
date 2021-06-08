@@ -1,8 +1,8 @@
-const ssbKeys = require('ssb-keys')
-const cont = require('cont')
 const tape = require('tape')
-const u = require('./util')
+const cont = require('cont')
+const ssbKeys = require('ssb-keys')
 const pull = require('pull-stream')
+const u = require('./util')
 
 // create 3 feeds
 // add some of friend edges (follow, flag)
@@ -12,7 +12,7 @@ function liveFriends (ssbServer) {
   const live = {}
   pull(
     ssbServer.friends.createFriendStream({ live: true, meta: true }),
-    pull.drain(function (friend) {
+    pull.drain((friend) => {
       if (friend.sync) return
       live[friend.id] = friend.hops
     })
@@ -32,7 +32,7 @@ const carol = ssbServer.createFeed()
 
 const live = liveFriends(ssbServer)
 
-tape('add and delete', function (t) {
+tape('add and delete', (t) => {
   cont.para([
     alice.add({
       type: 'contact',
@@ -62,8 +62,8 @@ tape('add and delete', function (t) {
       flagged: false
     }),
     bob.add(u.unfollow(carol.id))
-  ])(function () {
-    ssbServer.friends.hops(function (err, hops) {
+  ])(() => {
+    ssbServer.friends.hops((err, hops) => {
       if (err) throw err
       t.deepEqual(live, hops)
       t.end()
@@ -71,10 +71,10 @@ tape('add and delete', function (t) {
   })
 })
 
-tape('createFriendStream after delete', function (t) {
+tape('createFriendStream after delete', (t) => {
   pull(
     ssbServer.friends.createFriendStream(),
-    pull.collect(function (err, ary) {
+    pull.collect((err, ary) => {
       t.notOk(err)
       t.equal(ary.length, 2)
       t.deepEqual(ary.sort(), [alice.id, bob.id].sort())
@@ -83,8 +83,7 @@ tape('createFriendStream after delete', function (t) {
   )
 })
 
-tape('cleanup', function (t) {
+tape('cleanup', (t) => {
   ssbServer.close()
-
   t.end()
 })

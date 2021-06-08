@@ -8,7 +8,7 @@ const help = require('./help')
 
 // glue
 const authGlue = require('./glue/auth')
-const replicateEBTGlue = require('./glue/replicate')
+const replicationGlue = require('./glue/replicate')
 
 // friends plugin
 // methods to analyze the social graph
@@ -36,14 +36,14 @@ exports.init = function (sbot, config) {
   const layered = LayeredGraph({ max: max, start: sbot.id })
 
   function isFollowing (opts, cb) {
-    layered.onReady(function () {
+    layered.onReady(() => {
       const g = layered.getGraph()
       cb(null, g[opts.source] ? g[opts.source][opts.dest] >= 0 : false)
     })
   }
 
   function isBlocking (opts, cb) {
-    layered.onReady(function () {
+    layered.onReady(() => {
       const g = layered.getGraph()
       cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) === -1)
     })
@@ -61,13 +61,15 @@ exports.init = function (sbot, config) {
     authGlue(sbot, isBlocking)
 
   if (config.friends && config.friends.hookReplicate !== false)
-    replicateEBTGlue(sbot, layered)
+    replicationGlue(sbot, layered)
 
   return {
     hopStream: layered.hopStream,
     onEdge: layered.onEdge,
     follow (feedId, opts, cb) {
-      if (!isFeed(feedId)) return cb(new Error(`follow requires a feedId, got ${feedId}`))
+      if (!isFeed(feedId)) {
+        return cb(new Error(`follow() requires a feedId, got ${feedId}`))
+      }
       opts = opts || {}
 
       const content = {
@@ -79,7 +81,9 @@ exports.init = function (sbot, config) {
       sbot.publish(content, cb)
     },
     block (feedId, opts, cb) {
-      if (!isFeed(feedId)) return cb(new Error(`follow requires a feedId, got ${feedId}`))
+      if (!isFeed(feedId)) {
+        return cb(new Error(`block() requires a feedId, got ${feedId}`))
+      }
       opts = opts || {}
 
       const content = {
@@ -104,7 +108,7 @@ exports.init = function (sbot, config) {
         opts = {}
       }
 
-      layered.onReady(function () {
+      layered.onReady(() => {
         if (sbot.db)
           sbot.db.onDrain('contacts', () => cb(null, layered.getHops(opts)))
         else

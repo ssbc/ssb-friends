@@ -1,10 +1,10 @@
 const tape = require('tape')
-const { Server } = require('./util')
+const u = require('./util')
 
 const feedId = '@th3J6gjmDOBt77SRX1EFFWY0aH2Wagn21iUZViZFFxk=.ed25519'
 
 tape('follow', t => {
-  const sbot = Server({ tribes: true })
+  const sbot = u.Server({ tribes: true })
 
   /* FOLLOW */
   sbot.friends.follow(feedId, {}, (err, msg) => {
@@ -50,7 +50,7 @@ tape('follow', t => {
 })
 
 tape('block', t => {
-  const sbot = Server({ tribes: true })
+  const sbot = u.Server({ tribes: true })
 
   /* BLOCK */
   sbot.friends.block(feedId, {}, (err, msg) => {

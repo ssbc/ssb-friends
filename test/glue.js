@@ -6,7 +6,7 @@ const u = require('./util')
 const followedKeys = ssbKeys.generate()
 const blockedKeys = ssbKeys.generate()
 
-tape('listen to hopStream and requests replication of follows', function (t) {
+tape('listen to hopStream and requests replication of follows', (t) => {
   t.pass('followed feed is ' + followedKeys.id)
 
   const sbot = Server
@@ -40,10 +40,13 @@ tape('listen to hopStream and requests replication of follows', function (t) {
   })
 })
 
-tape('listen to hopStream and stops replication of blocks', function (t) {
+tape('listen to hopStream and stops replication of blocks', (t) => {
   t.pass('blocked feed is ' + blockedKeys.id)
 
-  const expected = [[blockedKeys.id, true], [blockedKeys.id, false]]
+  const expected = [
+    [blockedKeys.id, true],
+    [blockedKeys.id, false]
+  ]
 
   const sbot = Server
     .use({
