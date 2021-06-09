@@ -11,7 +11,7 @@ function createLog (message) {
   }
 }
 
-module.exports = function (layered) {
+module.exports = function setupLegacy(layered) {
   function mapGraph (g, fn) {
     const _g = {}
     for (const j in g) {
@@ -34,11 +34,6 @@ module.exports = function (layered) {
     // -2 is unfollow, -1 is block.
     return v >= 0 ? true : v === -2 ? null : v === -1 ? false : null
   }
-
-  const streamNotify = Notify()
-  layered.onEdge(function (j, k, v) {
-    streamNotify({ from: j, to: k, value: toLegacyValue(v) })
-  })
 
   const logLegacy1 = createLog('ssb-friends: createFriendStream legacy api used')
   const logLegacy2 = createLog('ssb-friends: get legacy api used')
@@ -95,9 +90,13 @@ module.exports = function (layered) {
     },
     stream: function () {
       logLegacy3()
+      const streamNotify = Notify()
       const source = streamNotify.listen()
       layered.onReady(function () {
-        source.push(mapGraph(layered.getGraph(), toLegacyValue))
+        streamNotify(mapGraph(layered.getGraph(), toLegacyValue))
+        layered.onEdge(function (j, k, v) {
+          streamNotify({ from: j, to: k, value: toLegacyValue(v) })
+        })
       })
       return source
     }

@@ -3,16 +3,10 @@ const LayeredGraph = require('layered-graph')
 const isFeed = require('ssb-ref').isFeed
 const contacts = require('./contacts')
 const db2Contacts = require('./db2-contacts')
-const _legacy = require('./legacy')
+const setupLegacy = require('./legacy')
 const help = require('./help')
-
-// glue
 const authGlue = require('./glue/auth')
 const replicationGlue = require('./glue/replicate')
-
-// friends plugin
-// methods to analyze the social graph
-// maintains a 'follow' and 'flag' graph
 
 exports.name = 'friends'
 exports.version = '1.0.0'
@@ -26,9 +20,11 @@ exports.manifest = {
   hops: 'async',
   help: 'sync',
   // createLayer: 'sync',       // not exposed over RPC as returns a function
-  get: 'async', //                 legacy
-  createFriendStream: 'source', // legacy
-  stream: 'source' //              legacy
+
+  // legacy:
+  get: 'async',
+  createFriendStream: 'source',
+  stream: 'source'
 }
 
 exports.init = function (sbot, config) {
@@ -36,6 +32,14 @@ exports.init = function (sbot, config) {
   if (!config.replicate) config.replicate = {}
   const max = config.friends.hops || config.replicate.hops || 3
   const layered = LayeredGraph({ max: max, start: sbot.id })
+
+  if (sbot.db) {
+    sbot.db.registerIndex(db2Contacts(layered.createLayer))
+  } else {
+    contacts(sbot, layered.createLayer, config)
+  }
+
+  const legacy = setupLegacy(layered)
 
   function isFollowing (opts, cb) {
     layered.onReady(() => {
@@ -51,12 +55,51 @@ exports.init = function (sbot, config) {
     })
   }
 
-  if (sbot.db)
-    sbot.db.registerIndex(db2Contacts(layered.createLayer))
-  else
-    contacts(sbot, layered.createLayer, config)
+  function follow (feedId, opts, cb) {
+    if (!isFeed(feedId)) {
+      return cb(new Error(`follow() requires a feedId, got ${feedId}`))
+    }
+    opts = opts || {}
 
-  const legacy = _legacy(layered)
+    const content = {
+      type: 'contact',
+      contact: feedId,
+      following: 'state' in opts ? opts.state : true,
+      recps: opts.recps
+    }
+    sbot.publish(content, cb)
+  }
+
+  function block (feedId, opts, cb) {
+    if (!isFeed(feedId)) {
+      return cb(new Error(`block() requires a feedId, got ${feedId}`))
+    }
+    opts = opts || {}
+
+    const content = {
+      type: 'contact',
+      contact: feedId,
+      blocking: 'state' in opts ? opts.state : true,
+      reason: typeof opts.reason === 'string' ? opts.reason : undefined,
+      recps: opts.recps
+    }
+    sbot.publish(content, cb)
+  }
+
+  function hops (opts, cb) {
+    if (typeof opts === 'function') {
+      cb = opts
+      opts = {}
+    }
+
+    layered.onReady(() => {
+      if (sbot.db) {
+        sbot.db.onDrain('contacts', () => cb(null, layered.getHops(opts)))
+      } else {
+        cb(null, layered.getHops(opts))
+      }
+    })
+  }
 
   // glue modules together
   if (config.friends.hookAuth !== false) // defaults to true
@@ -68,35 +111,8 @@ exports.init = function (sbot, config) {
   return {
     hopStream: layered.hopStream,
     onEdge: layered.onEdge,
-    follow (feedId, opts, cb) {
-      if (!isFeed(feedId)) {
-        return cb(new Error(`follow() requires a feedId, got ${feedId}`))
-      }
-      opts = opts || {}
-
-      const content = {
-        type: 'contact',
-        contact: feedId,
-        following: 'state' in opts ? opts.state : true,
-        recps: opts.recps
-      }
-      sbot.publish(content, cb)
-    },
-    block (feedId, opts, cb) {
-      if (!isFeed(feedId)) {
-        return cb(new Error(`block() requires a feedId, got ${feedId}`))
-      }
-      opts = opts || {}
-
-      const content = {
-        type: 'contact',
-        contact: feedId,
-        blocking: 'state' in opts ? opts.state : true,
-        reason: typeof opts.reason === 'string' ? opts.reason : undefined,
-        recps: opts.recps
-      }
-      sbot.publish(content, cb)
-    },
+    follow: follow,
+    block: block,
     isFollowing: isFollowing,
     isBlocking: isBlocking,
 
@@ -104,19 +120,7 @@ exports.init = function (sbot, config) {
     createLayer: layered.createLayer,
 
     // legacy, debugging
-    hops (opts, cb) {
-      if (typeof opts === 'function') {
-        cb = opts
-        opts = {}
-      }
-
-      layered.onReady(() => {
-        if (sbot.db)
-          sbot.db.onDrain('contacts', () => cb(null, layered.getHops(opts)))
-        else
-          cb(null, layered.getHops(opts))
-      })
-    },
+    hops: hops,
     help: () => help,
     // legacy
     get: legacy.get,
