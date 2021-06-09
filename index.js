@@ -32,7 +32,9 @@ exports.manifest = {
 }
 
 exports.init = function (sbot, config) {
-  const max = (config.friends && config.friends.hops) || (config.replicate && config.replicate.hops) || 3
+  if (!config.friends) config.friends = {}
+  if (!config.replicate) config.replicate = {}
+  const max = config.friends.hops || config.replicate.hops || 3
   const layered = LayeredGraph({ max: max, start: sbot.id })
 
   function isFollowing (opts, cb) {
@@ -57,10 +59,10 @@ exports.init = function (sbot, config) {
   const legacy = _legacy(layered)
 
   // glue modules together
-  if (!config.friends || config.friends.hookAuth !== false)
+  if (config.friends.hookAuth !== false) // defaults to true
     authGlue(sbot, isBlocking)
 
-  if (!config.friends || config.friends.hookReplicate !== false)
+  if (config.friends.hookReplicate !== false) // defaults to true
     replicationGlue(sbot, layered)
 
   return {
