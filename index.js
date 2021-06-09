@@ -106,7 +106,7 @@ exports.init = function (sbot, config) {
     authGlue(sbot, isBlocking)
 
   if (config.friends.hookReplicate !== false) // defaults to true
-    replicationGlue(sbot, layered)
+    replicationGlue(sbot, layered, legacy)
 
   return {
     hopStream: layered.hopStream,
