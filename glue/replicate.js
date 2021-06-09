@@ -8,14 +8,14 @@ module.exports = function replicationGlue(sbot, layered, legacy) {
     }
 
     function updateEdge(orig, dest, value) {
-      if (orig === sbot.id) sbot.replicate.request(dest, !!value)
-      if (dest !== sbot.id) sbot.replicate.block(orig, dest, value === false)
+      if (orig === sbot.id) sbot.replicate.request(dest, value !== false)
+      if (dest !== sbot.id) sbot.replicate.block(orig, dest, !value)
     }
 
     sbot.replicate.request(sbot.id, true)
 
     pull(
-      legacy.stream({ live: true }),
+      legacy.stream(),
       pull.filter(contacts => !!contacts),
       pull.drain((contacts) => {
         if (contacts.from && contacts.to) {
