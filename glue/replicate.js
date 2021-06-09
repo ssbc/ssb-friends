@@ -12,6 +12,8 @@ module.exports = function replicationGlue(sbot, layered, legacy) {
       if (dest !== sbot.id) sbot.replicate.block(orig, dest, value === false)
     }
 
+    sbot.replicate.request(sbot.id, true)
+
     pull(
       legacy.stream({ live: true }),
       pull.filter(contacts => !!contacts),
