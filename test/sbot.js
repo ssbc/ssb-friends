@@ -1,6 +1,7 @@
 const tape = require('tape')
 const gen = require('ssb-generate')
 const pull = require('pull-stream')
+const run = require('promisify-tuple')
 const u = require('./util')
 
 const botA = u.Server({
@@ -13,7 +14,7 @@ const botA = u.Server({
 tape('empty database follow self', function (t) {
   pull(
     botA.friends.createFriendStream(),
-    pull.collect(function (err, a) {
+    pull.collect((err, a) => {
       t.error(err)
       t.deepEqual(a, [botA.id])
       t.end()
@@ -21,8 +22,7 @@ tape('empty database follow self', function (t) {
   )
 })
 
-
-tape('live follows works', function (t) {
+tape('live follows works', async (t) => {
   const a = []
 
   pull(
@@ -36,43 +36,43 @@ tape('live follows works', function (t) {
     })
   )
 
-  gen.initialize(botA, 10, 2, function (err, peers, hops) {
-    t.error(err, 'initialize test data')
+  const [err, peers] = await run(gen.initialize)(botA, 10, 2)
+  t.error(err, 'initialize test data')
 
-    console.log(a.length, hops)
+  t.true(a.length >= 1, 'a.length === ' + a.length)
 
-    const seen = {}
-    let count = 0
-    const notSeen = {}
+  const seen = {}
+  let count = 0
+  const notSeen = {}
 
-    peers.forEach(function (v) {
-      notSeen[v.id] = true
-    })
-
-    a.forEach(function (v) {
-      if (!seen[v.id]) {
-        seen[v.id] = true
-        delete notSeen[v.id]
-        count++
-      }
-    })
-
-    botA.friends.hops(function (err, hops) {
-      if (err) throw err
-      for (const k in notSeen) { console.log('NS', k, hops[k]) }
-
-      t.deepEqual(notSeen, {})
-      t.deepEqual(count, peers.length, 'all peers streamed')
-      //    b.forEach(function (e) { t.ok(e.hops <= 1, 'b '+e.hops+' hops <= 1') })
-      //    c.forEach(function (e) { t.ok(e.hops <= 2, 'c '+e.hops+' hops <= 2') })
-      //    t.ok(a.length >= b.length, '1 hops')
-      //    t.ok(c.length >= b.length, '2 hops')
-      //
-      botA.close(err => {
-        t.end(err, 'botA closed')
-      })
-    })
+  peers.forEach((v) => {
+    notSeen[v.id] = true
   })
+
+  a.forEach((v) => {
+    if (!seen[v.id]) {
+      seen[v.id] = true
+      delete notSeen[v.id]
+      count++
+    }
+  })
+
+  const [err2, hops] = await run(botA.friends.hops)()
+  t.error(err2)
+  for (const k in notSeen) {
+    console.log('Not Seen', k, hops[k])
+  }
+
+  t.deepEqual(notSeen, {})
+  t.deepEqual(count, peers.length, 'all peers streamed')
+  // b.forEach(function (e) { t.ok(e.hops <= 1, 'b '+e.hops+' hops <= 1') })
+  // c.forEach(function (e) { t.ok(e.hops <= 2, 'c '+e.hops+' hops <= 2') })
+  // t.ok(a.length >= b.length, '1 hops')
+  // t.ok(c.length >= b.length, '2 hops')
+
+  const [err3] = await run(botA.close)()
+  t.error(err3)
+  t.end()
 })
 
 tape('chill plugin order', t => {

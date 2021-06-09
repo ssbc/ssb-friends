@@ -1,8 +1,8 @@
 const tape = require('tape')
 const os = require('os')
 const path = require('path')
-const cont = require('cont')
 const ssbKeys = require('ssb-keys')
+const run = require('promisify-tuple')
 const pull = require('pull-stream')
 const validate = require('ssb-validate')
 const rimraf = require('rimraf')
@@ -41,13 +41,13 @@ let state = validate.initial()
 function addMsg(db, keys, content) {
   state = validate.appendNew(state, null, keys, content, Date.now())
 
-  return (cb) => {
+  return run((cb) => {
     value = state.queue.shift().value
     db.add(value, cb)
-  }
+  })()
 }
 
-tape('db2 friends test', (t) => {
+tape('db2 friends test', async (t) => {
   const alice = ssbKeys.generate()
   const bob = ssbKeys.generate()
   const carol = ssbKeys.generate()
@@ -63,7 +63,7 @@ tape('db2 friends test', (t) => {
   })
   let live = liveFriends(sbot)
 
-  cont.para([
+  await Promise.all([
     addMsg(sbot.db, alice, u.follow(bob.id)),
     addMsg(sbot.db, alice, u.follow(carol.id)),
     addMsg(sbot.db, alice, u.follow(alice.id)),
@@ -75,41 +75,35 @@ tape('db2 friends test', (t) => {
       flagged: true
     }),
     addMsg(sbot.db, carol, u.follow(alice.id))
-  ])((err, results) => {
-    sbot.friends.hops((err, hops) => {
-      if (err) throw err
-      t.deepEqual(live, hops)
+  ])
 
-      sbot.close(() => {
-        sbot = Server({
-          keys: alice,
-          db2: true,
-          friends: {
-            hookAuth: false,
-            hookReplicate: false
-          },
-          path: dir
-        })
-        live = liveFriends(sbot)
+  const [err, hops] = await run(sbot.friends.hops)()
+  t.error(err)
+  t.deepEqual(live, hops)
 
-        addMsg(sbot.db, bob, {
-          type: 'contact',
-          contact: carol.id,
-          following: true
-        })((err) => {
-          if (err) throw err
-
-          sbot.db.onDrain('contacts', () => {
-            t.deepEqual(live, hops)
-            sbot.close(t.end)
-          })
-        })
-      })
-    })
+  await run(sbot.close)()
+  sbot = Server({
+    keys: alice,
+    db2: true,
+    friends: {
+      hookAuth: false,
+      hookReplicate: false
+    },
+    path: dir
   })
+  live = liveFriends(sbot)
+
+  const [err2] = await addMsg(sbot.db, bob, u.follow(carol.id))
+  t.error(err2)
+
+  await run(sbot.db.onDrain)('contacts')
+  t.deepEqual(live, hops)
+
+  await run(sbot.close)()
+  t.end()
 })
 
-tape('db2 unfollow', (t) => {
+tape('db2 unfollow', async (t) => {
   const alice = ssbKeys.generate()
   const bob = ssbKeys.generate()
   const carol = ssbKeys.generate()
@@ -128,53 +122,51 @@ tape('db2 unfollow', (t) => {
   })
   let live = liveFriends(sbot)
 
-  cont.para([
+  await Promise.all([
     addMsg(sbot.db, alice, u.follow(bob.id)),
     addMsg(sbot.db, alice, u.follow(carol.id)),
     addMsg(sbot.db, bob, u.follow(alice.id)),
     addMsg(sbot.db, carol, u.follow(alice.id))
-  ])((err, results) => {
-    sbot.friends.hops((err, hops) => {
-      if (err) throw err
-      t.deepEqual(live, hops)
+  ])
 
-      sbot.close(() => {
-        sbot = Server({
-          keys: alice,
-          db2: true,
-          friends: {
-            hookAuth: false,
-            hookReplicate: false
-          },
-          path: dir
-        })
-        live = liveFriends(sbot)
+  const [err, hops] = await run(sbot.friends.hops)()
+  t.error(err)
+  t.deepEqual(live, hops)
 
-        addMsg(sbot.db, alice, u.unfollow(bob.id))((err) => {
-          if (err) throw err
-
-          sbot.friends.hops((err, hops) => {
-            t.deepEqual(live, hops)
-
-            sbot.close(() => {
-              sbot = Server({
-                keys: alice,
-                db2: true,
-                friends: {
-                  hookAuth: false,
-                  hookReplicate: false
-                },
-                path: dir
-              })
-
-              sbot.friends.hops((err, hopsAfter) => {
-                t.deepEqual(hopsAfter, hops)
-                sbot.close(t.end)
-              })
-            })
-          })
-        })
-      })
-    })
+  await run(sbot.close)()
+  sbot = Server({
+    keys: alice,
+    db2: true,
+    friends: {
+      hookAuth: false,
+      hookReplicate: false
+    },
+    path: dir
   })
+  live = liveFriends(sbot)
+
+  const [err2] = await addMsg(sbot.db, alice, u.unfollow(bob.id))
+  t.error(err2)
+
+  const [err3, hops3] = await run(sbot.friends.hops)()
+  t.error(err3)
+  t.deepEqual(live, hops3)
+
+  await run(sbot.close)()
+  sbot = Server({
+    keys: alice,
+    db2: true,
+    friends: {
+      hookAuth: false,
+      hookReplicate: false
+    },
+    path: dir
+  })
+
+  const [err4, hopsAfter] = await run(sbot.friends.hops)()
+  t.error(err4)
+  t.deepEqual(hopsAfter, hops3)
+
+  await run(sbot.close)()
+  t.end()
 })
