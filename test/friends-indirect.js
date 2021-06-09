@@ -1,6 +1,6 @@
 const tape = require('tape')
 const ssbKeys = require('ssb-keys')
-const cont = require('cont')
+const run = require('promisify-tuple')
 const pull = require('pull-stream')
 const u = require('./util')
 
@@ -36,30 +36,27 @@ const dan = ssbServer.createFeed()
 
 const live = liveFriends(ssbServer)
 
-tape('chain of friends', (t) => {
-  cont.para([
-    alice.add(u.follow(bob.id)),
-    bob.add(u.follow(carol.id)),
-    carol.add(u.follow(dan.id))
-  ])((err, results) => {
-    if (err) throw err
+tape('chain of friends', async (t) => {
+  await Promise.all([
+    run(alice.add)(u.follow(bob.id)),
+    run(bob.add)(u.follow(carol.id)),
+    run(carol.add)(u.follow(dan.id))
+  ])
 
-    ssbServer.friends.hops({ hops: 3 }, (err, all) => {
-      if (err) throw err
-      const o = {}
+  const [err, all] = await run(ssbServer.friends.hops)({ hops: 3 })
+  t.error(err)
+  const o = {}
 
-      o[alice.id] = 0
-      o[bob.id] = 1
-      o[carol.id] = 2
-      o[dan.id] = 3
+  o[alice.id] = 0
+  o[bob.id] = 1
+  o[carol.id] = 2
+  o[dan.id] = 3
 
-      t.deepEqual(all, o)
+  t.deepEqual(all, o)
 
-      t.deepEqual(live, o)
+  t.deepEqual(live, o)
 
-      t.end()
-    })
-  })
+  t.end()
 })
 
 const expected = [
@@ -95,6 +92,5 @@ tape('creatFriendStream - meta', (t) => {
 })
 
 tape('cleanup', (t) => {
-  ssbServer.close()
-  t.end()
+  ssbServer.close(t.end)
 })

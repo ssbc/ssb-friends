@@ -1,5 +1,5 @@
 const tape = require('tape')
-const cont = require('cont')
+const run = require('promisify-tuple')
 const ssbKeys = require('ssb-keys')
 const pull = require('pull-stream')
 const u = require('./util')
@@ -30,33 +30,31 @@ const alice = ssbServer.createFeed(aliceKeys)
 const bob = ssbServer.createFeed()
 const carol = ssbServer.createFeed()
 
-tape('add friends, and retrive all friends for a peer', (t) => {
+tape('add friends, and retrieve all friends for a peer', async (t) => {
   const live = liveFriends(ssbServer)
 
-  cont.para([
-    alice.add({
+  await Promise.all([
+    run(alice.add)({
       type: 'contact',
       contact: bob.id,
       following: true
-      //        flagged: { reason: 'foo' }
+      // flagged: { reason: 'foo' }
     }),
-    alice.add(u.follow(carol.id)),
-    bob.add(u.follow(alice.id)),
-    bob.add({
+    run(alice.add)(u.follow(carol.id)),
+    run(bob.add)(u.follow(alice.id)),
+    run(bob.add)({
       type: 'contact',
       contact: carol.id,
       following: false,
       flagged: true
     }),
-    carol.add(u.follow(alice.id))
-  ])((err, results) => {
-    if (err) throw err
-    ssbServer.friends.hops((err, hops) => {
-      if (err) throw err
-      t.deepEqual(live, hops)
-      t.end()
-    })
-  })
+    run(carol.add)(u.follow(alice.id))
+  ])
+
+  const [err, hops] = await run(ssbServer.friends.hops)()
+  t.error(err)
+  t.deepEqual(live, hops)
+  t.end()
 })
 
 tape('createFriendStream', (t) => {
@@ -92,6 +90,5 @@ tape('createFriendStream - meta', (t) => {
 })
 
 tape('cleanup', (t) => {
-  ssbServer.close()
-  t.end()
+  ssbServer.close(t.end)
 })
