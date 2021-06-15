@@ -22,6 +22,20 @@ tape('empty database follow self', function (t) {
   )
 })
 
+tape('silly input for sbot.friend.follow is an error', t => {
+  botA.friends.follow('not a feed id', {}, (err) => {
+    t.match(err.message, /requires a feedId/)
+    t.end()
+  })
+})
+
+tape('silly input for sbot.friend.block throws', t => {
+  botA.friends.block('not a feed id', {}, (err) => {
+    t.match(err.message, /requires a feedId/)
+    t.end()
+  })
+})
+
 tape('live follows works', async (t) => {
   const a = []
 
