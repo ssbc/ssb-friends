@@ -100,9 +100,19 @@ exports.init = function (sbot, config) {
     })
   }
 
-  // glue modules together
-  if (config.friends.hookAuth !== false) // defaults to true
+  // Immediately disconnect from peers we just blocked, if they are connected
+  layered.onEdge((orig, dest, value) => {
+    // if WE are BLOCKING a CONNECTED PEER
+    if (orig === sbot.id && value === -1 && sbot.peers[dest]) {
+      sbot.peers[dest].forEach(rpc => rpc.close(true))
+      sbot.peers[dest] = []
+    }
+  })
+
+  // Make sure blocked peers cannot start a connection, default is true
+  if (config.friends.hookAuth !== false) {
     authGlue(sbot, isBlocking)
+  }
 
   return {
     hopStream: layered.hopStream,
