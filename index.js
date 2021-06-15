@@ -5,8 +5,7 @@ const contacts = require('./contacts')
 const db2Contacts = require('./db2-contacts')
 const setupLegacy = require('./legacy')
 const help = require('./help')
-const authGlue = require('./glue/auth')
-const replicationGlue = require('./glue/replicate')
+const authGlue = require('./auth-glue')
 
 exports.name = 'friends'
 exports.version = '1.0.0'
@@ -104,9 +103,6 @@ exports.init = function (sbot, config) {
   // glue modules together
   if (config.friends.hookAuth !== false) // defaults to true
     authGlue(sbot, isBlocking)
-
-  if (config.friends.hookReplicate !== false) // defaults to true
-    replicationGlue(sbot, layered, legacy)
 
   return {
     hopStream: layered.hopStream,
