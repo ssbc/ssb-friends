@@ -51,8 +51,36 @@ tape('add friends, and retrieve all friends for a peer', async (t) => {
     run(carol.add)(u.follow(alice.id))
   ])
 
-  const [err, hops] = await run(ssbServer.friends.hops)()
-  t.error(err)
+  // alice isFollowing bob, and NOT isBlocking bob
+  const [err1, response1] = await run(ssbServer.friends.isFollowing)({
+    source: alice.id,
+    dest: bob.id,
+  })
+  t.error(err1)
+  t.true(response1)
+  const [err2, response2] = await run(ssbServer.friends.isBlocking)({
+    source: alice.id,
+    dest: bob.id,
+  })
+  t.error(err2)
+  t.false(response2)
+
+  // bob isBlocking carol, and NOT isFollowing carol
+  const [err3, response3] = await run(ssbServer.friends.isBlocking)({
+    source: bob.id,
+    dest: carol.id,
+  })
+  t.error(err3)
+  t.true(response3)
+  const [err4, response4] = await run(ssbServer.friends.isFollowing)({
+    source: bob.id,
+    dest: carol.id,
+  })
+  t.error(err4)
+  t.false(response4)
+
+  const [err5, hops] = await run(ssbServer.friends.hops)()
+  t.error(err5)
   t.deepEqual(live, hops)
   t.end()
 })
