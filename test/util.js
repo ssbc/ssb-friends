@@ -3,7 +3,6 @@ const Server = require('scuttle-testbot')
 
 exports.Server = function Testbot (opts = {}) {
   let stack = Server
-    .use(require('ssb-replicate'))
     .use(require('..'))
 
   if (opts.tribes === true)
@@ -17,16 +16,19 @@ exports.follow = function (id) {
     type: 'contact', contact: id, following: true
   }
 }
+
 exports.unfollow = function (id) {
   return {
     type: 'contact', contact: id, following: false
   }
 }
+
 exports.block = function (id) {
   return {
     type: 'contact', contact: id, blocking: true
   }
 }
+
 exports.unblock = function (id) {
   return {
     type: 'contact', contact: id, blocking: false

@@ -4,9 +4,8 @@ const run = require('promisify-tuple')
 const u = require('./util')
 
 const botA = u.Server({
-  replicate: {
+  friends: {
     hops: 2,
-    legacy: false
   }
 })
 

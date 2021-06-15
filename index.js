@@ -28,8 +28,7 @@ exports.manifest = {
 
 exports.init = function (sbot, config) {
   if (!config.friends) config.friends = {}
-  if (!config.replicate) config.replicate = {}
-  const max = config.friends.hops || config.replicate.hops || 3
+  const max = config.friends.hops || 3
   const layered = LayeredGraph({ max: max, start: sbot.id })
 
   if (sbot.db) {

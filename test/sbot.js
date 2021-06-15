@@ -5,9 +5,8 @@ const run = require('promisify-tuple')
 const u = require('./util')
 
 const botA = u.Server({
-  replicate: {
+  friends: {
     hops: 100,
-    legacy: false
   }
 })
 
@@ -92,12 +91,10 @@ tape('live follows works', async (t) => {
 tape('chill plugin order', t => {
   const createSbot = require('scuttle-testbot')
     .use(require('..'))
-    .use(require('ssb-replicate'))
 
   const bot = createSbot({
-    replicate: {
+    friends: {
       hops: 100,
-      legacy: false
     }
   })
 

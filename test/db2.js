@@ -57,7 +57,6 @@ tape('db2 friends test', async (t) => {
     db2: true,
     friends: {
       hookAuth: false,
-      hookReplicate: false
     },
     path: dir
   })
@@ -87,7 +86,6 @@ tape('db2 friends test', async (t) => {
     db2: true,
     friends: {
       hookAuth: false,
-      hookReplicate: false
     },
     path: dir
   })
@@ -116,7 +114,6 @@ tape('db2 unfollow', async (t) => {
     db2: true,
     friends: {
       hookAuth: false,
-      hookReplicate: false
     },
     path: dir
   })
@@ -139,7 +136,6 @@ tape('db2 unfollow', async (t) => {
     db2: true,
     friends: {
       hookAuth: false,
-      hookReplicate: false
     },
     path: dir
   })
@@ -158,7 +154,6 @@ tape('db2 unfollow', async (t) => {
     db2: true,
     friends: {
       hookAuth: false,
-      hookReplicate: false
     },
     path: dir
   })

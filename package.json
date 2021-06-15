@@ -31,7 +31,6 @@
     "secret-stack": "^6.1.2",
     "ssb-caps": "^1.1.0",
     "ssb-generate": "^1.0.1",
-    "ssb-replicate": "^1.1.0",
     "ssb-tribes": "^0.4.1",
     "standard": "^16.0.2",
     "tap-spec": "^5.0.0",
