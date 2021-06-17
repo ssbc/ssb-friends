@@ -66,6 +66,10 @@ tape('db2 friends test', async (t) => {
   let live = liveHops(sbot)
 
   await Promise.all([
+    // Publish some irrelevant messages to test that the db2 index doesn't crash
+    addMsg(sbot.db, alice, { type: 'post', text: 'hello world' }),
+    addMsg(sbot.db, alice, { type: 'contact', contact: 'not a feed' }),
+    // Publish actual follows
     addMsg(sbot.db, alice, u.follow(bob.id)),
     addMsg(sbot.db, alice, u.follow(carol.id)),
     addMsg(sbot.db, alice, u.follow(alice.id)),

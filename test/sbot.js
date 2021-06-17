@@ -21,6 +21,12 @@ tape('empty database follow self', function (t) {
   )
 })
 
+tape('help object', function (t) {
+  const obj = botA.friends.help()
+  t.deepEquals(Object.keys(obj), ['description', 'commands'])
+  t.end()
+})
+
 tape('silly input for sbot.friend.follow is an error', t => {
   botA.friends.follow('not a feed id', {}, (err) => {
     t.match(err.message, /requires a feedId/)
@@ -31,6 +37,14 @@ tape('silly input for sbot.friend.follow is an error', t => {
 tape('silly input for sbot.friend.block throws', t => {
   botA.friends.block('not a feed id', {}, (err) => {
     t.match(err.message, /requires a feedId/)
+    t.end()
+  })
+})
+
+tape('silly input for isFollowing', t => {
+  botA.friends.isFollowing({}, (err, following) => {
+    t.error(err)
+    t.false(following)
     t.end()
   })
 })

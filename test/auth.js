@@ -40,10 +40,10 @@ tape('blocked peer cannot connect', async (t) => {
   const alice = u.Server({ caps })
   const bob = u.Server({ caps })
 
-  const [err1] = await run(alice.friends.block)(bob.id, {})
+  const [err1] = await run(alice.friends.block)(bob.id, null)
   t.error(err1, 'alice blocks bob')
 
-  const [err2] = await run(bob.friends.follow)(alice.id, {})
+  const [err2] = await run(bob.friends.follow)(alice.id, null)
   t.error(err2, 'bob follows alice')
 
   const [err3, rpcBobAlice] = await run(bob.connect)(alice.getAddress())
