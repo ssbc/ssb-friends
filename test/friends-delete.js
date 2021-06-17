@@ -37,6 +37,10 @@ const live = liveFriends(ssbServer)
 
 tape('add and delete', async (t) => {
   await Promise.all([
+    // Publish a few irrelevant messages to test `./contacts.js` corner cases
+    run(alice.add)({ type: 'post', text: 'hello world' }),
+    run(alice.add)({ type: 'contact', contact: 'not a feed id' }),
+    // Publish actual contact messages
     run(alice.add)({
       type: 'contact',
       contact: bob.id,

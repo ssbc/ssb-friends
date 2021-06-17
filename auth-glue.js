@@ -14,8 +14,6 @@ module.exports = function authGlue(sbot, layered, isBlocking) {
     const self = this
     const [feedId, cb] = args
     isBlocking({ source: sbot.id, dest: feedId }, (err, blocked) => {
-      if (err) console.error(err)
-
       if (blocked) cb(new Error('client is blocked'))
       else fn.apply(self, args)
     })
