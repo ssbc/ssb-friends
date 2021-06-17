@@ -11,14 +11,17 @@ const SecretStack = require('secret-stack')
 const caps = require('ssb-caps')
 const u = require('./util')
 
-function liveFriends (ssbServer) {
-  const live = {}
+function liveHops (ssbServer) {
+  const live = {
+    [ssbServer.id]: 0
+  }
   pull(
-    ssbServer.friends.createFriendStream({ live: true, meta: true }),
-    pull.drain((friend) => {
-      if (friend.sync) return
-      live[friend.id] = friend.hops
-    }),
+    ssbServer.friends.hopStream({ live: true }),
+    pull.drain((hops) => {
+      for (const feedId of Object.keys(hops)) {
+        live[feedId] = hops[feedId]
+      }
+    })
   )
   return live
 }
@@ -60,7 +63,7 @@ tape('db2 friends test', async (t) => {
     },
     path: dir
   })
-  let live = liveFriends(sbot)
+  let live = liveHops(sbot)
 
   await Promise.all([
     addMsg(sbot.db, alice, u.follow(bob.id)),
@@ -89,7 +92,7 @@ tape('db2 friends test', async (t) => {
     },
     path: dir
   })
-  live = liveFriends(sbot)
+  live = liveHops(sbot)
 
   const [err2] = await addMsg(sbot.db, bob, u.follow(carol.id))
   t.error(err2)
@@ -117,7 +120,7 @@ tape('db2 unfollow', async (t) => {
     },
     path: dir
   })
-  let live = liveFriends(sbot)
+  let live = liveHops(sbot)
 
   await Promise.all([
     addMsg(sbot.db, alice, u.follow(bob.id)),
@@ -139,7 +142,7 @@ tape('db2 unfollow', async (t) => {
     },
     path: dir
   })
-  live = liveFriends(sbot)
+  live = liveHops(sbot)
 
   const [err2] = await addMsg(sbot.db, alice, u.unfollow(bob.id))
   t.error(err2)
