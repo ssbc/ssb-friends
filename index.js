@@ -43,15 +43,25 @@ exports.init = function (sbot, config) {
 
   const legacy = setupLegacy(layered)
 
-  function isFollowing (opts, cb) {
+  function onReady (cb) {
     layered.onReady(() => {
+      if (sbot.db) {
+        sbot.db.onDrain('contacts', cb)
+      } else {
+        cb()
+      }
+    })
+  }
+
+  function isFollowing (opts, cb) {
+    onReady(() => {
       const g = layered.getGraph()
       cb(null, g[opts.source] ? g[opts.source][opts.dest] >= 0 : false)
     })
   }
 
   function isBlocking (opts, cb) {
-    layered.onReady(() => {
+    onReady(() => {
       const g = layered.getGraph()
       cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) === -1)
     })
@@ -89,12 +99,8 @@ exports.init = function (sbot, config) {
   }
 
   function graph (cb) {
-    layered.onReady(() => {
-      if (sbot.db) {
-        sbot.db.onDrain('contacts', () => cb(null, layered.getGraph()))
-      } else {
-        cb(null, layered.getGraph())
-      }
+    onReady(() => {
+      cb(null, layered.getGraph())
     })
   }
 
@@ -104,7 +110,7 @@ exports.init = function (sbot, config) {
     const live = opts.live !== false // default is true
     if (live) {
       return pCont((cb) => {
-        layered.onReady(() => {
+        onReady(() => {
           let p
           const unsubscribe = layered.onEdge((source, dest, value) => {
             p.push({source, dest, value})
@@ -118,7 +124,7 @@ exports.init = function (sbot, config) {
       })
     } else {
       return pCont((cb) => {
-        layered.onReady(() => {
+        onReady(() => {
           cb(null, pull.once(layered.getGraph()))
         })
       })
@@ -131,12 +137,8 @@ exports.init = function (sbot, config) {
       opts = {}
     }
 
-    layered.onReady(() => {
-      if (sbot.db) {
-        sbot.db.onDrain('contacts', () => cb(null, layered.getHops(opts)))
-      } else {
-        cb(null, layered.getHops(opts))
-      }
+    onReady(() => {
+      cb(null, layered.getHops(opts))
     })
   }
 
