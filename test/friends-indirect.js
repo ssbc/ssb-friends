@@ -8,17 +8,16 @@ const u = require('./util')
 // add some of friend edges (follow, flag)
 // make sure the friends plugin analyzes correctly
 
-function sort (ary) {
-  return ary.sort((a, b) => (a.id < b.id ? -1 : a.id === b.id ? 1 : 0))
-}
-
-function liveFriends (ssbServer) {
-  const live = {}
+function liveHops (ssbServer) {
+  const live = {
+    [ssbServer.id]: 0
+  }
   pull(
-    ssbServer.friends.createFriendStream({ live: true, meta: true }),
-    pull.drain((friend) => {
-      if (friend.sync) return
-      live[friend.id] = friend.hops
+    ssbServer.friends.hopStream({ live: true }),
+    pull.drain((hops) => {
+      for (const feedId of Object.keys(hops)) {
+        live[feedId] = hops[feedId]
+      }
     })
   )
   return live
@@ -26,7 +25,10 @@ function liveFriends (ssbServer) {
 
 const aliceKeys = ssbKeys.generate()
 const ssbServer = u.Server({
-  keys: aliceKeys
+  keys: aliceKeys,
+  friends: {
+    hops: 4
+  }
 })
 
 const alice = ssbServer.createFeed(aliceKeys)
@@ -34,7 +36,7 @@ const bob = ssbServer.createFeed()
 const carol = ssbServer.createFeed()
 const dan = ssbServer.createFeed()
 
-const live = liveFriends(ssbServer)
+const live = liveHops(ssbServer)
 
 tape('chain of friends', async (t) => {
   await Promise.all([
@@ -43,49 +45,36 @@ tape('chain of friends', async (t) => {
     run(carol.add)(u.follow(dan.id))
   ])
 
-  const [err, all] = await run(ssbServer.friends.hops)({ hops: 3 })
+  const [err, all] = await run(ssbServer.friends.hops)()
   t.error(err)
-  const o = {}
+  const expected = {
+    [alice.id]: 0,
+    [bob.id]: 1,
+    [carol.id]: 2,
+    [dan.id]: 3
+  }
 
-  o[alice.id] = 0
-  o[bob.id] = 1
-  o[carol.id] = 2
-  o[dan.id] = 3
+  t.deepEqual(all, expected)
 
-  t.deepEqual(all, o)
-
-  t.deepEqual(live, o)
+  t.deepEqual(live, expected)
 
   t.end()
 })
 
-const expected = [
-  { id: alice.id, hops: 0 },
-  { id: bob.id, hops: 1 },
-  { id: carol.id, hops: 2 },
-  { id: dan.id, hops: 3 }
-]
+tape('hopStream live=false', (t) => {
+  const expected = {
+    [alice.id]: 0,
+    [bob.id]: 1,
+    [carol.id]: 2,
+    [dan.id]: 3,
+  }
 
-tape('createFriendStream on long chain', (t) => {
   pull(
-    ssbServer.friends.createFriendStream(),
+    ssbServer.friends.hopStream({ live: false }),
     pull.collect((err, ary) => {
       if (err) throw err
-      t.deepEqual(ary, expected.map((e) => e.id))
-      t.end()
-    })
-  )
-})
-
-tape('creatFriendStream - meta', (t) => {
-  pull(
-    ssbServer.friends.createFriendStream({ meta: true }),
-    pull.collect((err, ary) => {
-      t.notOk(err)
-
-      t.equal(ary.length, 4)
-      t.deepEqual(sort(ary), sort(expected))
-
+      t.equals(ary.length, 1)
+      t.deepEqual(ary[0], expected)
       t.end()
     })
   )

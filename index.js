@@ -5,7 +5,6 @@ const LayeredGraph = require('layered-graph')
 const isFeed = require('ssb-ref').isFeed
 const contacts = require('./contacts')
 const db2Contacts = require('./db2-contacts')
-const setupLegacy = require('./legacy')
 const help = require('./help')
 const authGlue = require('./auth-glue')
 
@@ -21,13 +20,6 @@ exports.manifest = {
   graph: 'async',
   graphStream: 'source',
   help: 'sync',
-
-  // legacy:
-  onEdge: 'sync',
-  // createLayer: 'sync',       // not exposed over RPC as returns a function
-  get: 'async',
-  createFriendStream: 'source',
-  stream: 'source'
 }
 
 exports.init = function (sbot, config) {
@@ -40,8 +32,6 @@ exports.init = function (sbot, config) {
   } else {
     contacts(sbot, layered.createLayer, config)
   }
-
-  const legacy = setupLegacy(layered)
 
   function onReady (cb) {
     layered.onReady(() => {
@@ -157,12 +147,5 @@ exports.init = function (sbot, config) {
     graph: graph,
     graphStream: graphStream,
     help: () => help,
-
-    // legacy, debugging
-    onEdge: layered.onEdge,
-    createLayer: layered.createLayer,
-    get: legacy.get,
-    createFriendStream: legacy.createFriendStream,
-    stream: legacy.stream,
   }
 }

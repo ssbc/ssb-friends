@@ -12,10 +12,10 @@ const botA = u.Server({
 
 tape('empty database follow self', function (t) {
   pull(
-    botA.friends.createFriendStream(),
+    botA.friends.hopStream(),
     pull.collect((err, a) => {
       t.error(err)
-      t.deepEqual(a, [botA.id])
+      t.deepEqual(a, [{ [botA.id]: 0 }])
       t.end()
     })
   )
@@ -39,7 +39,7 @@ tape('live follows works', async (t) => {
   const a = []
 
   pull(
-    botA.friends.createFriendStream({
+    botA.friends.hopStream({
       live: true,
       meta: true,
       hops: 10
@@ -63,10 +63,12 @@ tape('live follows works', async (t) => {
   })
 
   a.forEach((v) => {
-    if (!seen[v.id]) {
-      seen[v.id] = true
-      delete notSeen[v.id]
-      count++
+    for (const feedId of Object.keys(v)) {
+      if (!seen[feedId]) {
+        seen[feedId] = true
+        delete notSeen[feedId]
+        count++
+      }
     }
   })
 

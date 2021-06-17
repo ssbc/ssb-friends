@@ -16,16 +16,18 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
   // currently, the legacy api has a thing were it sends `{id: sbot.id, hops: 0}` twice,
   // just gonna make the test more forgiving for now.
   pull(
-    botA.friends.createFriendStream({
+    botA.friends.hopStream({
       live: true,
       meta: true,
       hops: 2
     }),
     pull.drain((m) => {
-      if (hops[m.id] !== m.hops) {
-        changes.push(m)
+      for (const feedId of Object.keys(m)) {
+        if (hops[feedId] !== m[feedId]) {
+          changes.push({[feedId]: m[feedId]})
+        }
+        hops[feedId] = m[feedId]
       }
-      hops[m.id] = m.hops
     })
   )
 
@@ -39,7 +41,7 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
     contact: feedB.id,
     following: true
   })
-  t.deepEqual(changes, [ { id: botA.id, hops: 0 } ])
+  t.deepEqual(changes, [ { [botA.id]: 0 } ])
   changes.length = 0
 
   // feedB -> feedC
@@ -56,8 +58,8 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
     following: true
   })
   t.deepEqual(changes, [
-    { id: feedA.id, hops: 1 },
-    { id: feedB.id, hops: 2 }
+    { [feedA.id]: 1 },
+    { [feedB.id]: 2 }
   ])
   changes.length = 0
 
@@ -68,44 +70,46 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
     following: true
   })
   t.deepEqual(changes, [
-    { id: feedB.id, hops: 1 },
-    { id: feedC.id, hops: 2 }
+    { [feedB.id]: 1 },
+    { [feedC.id]: 2 }
   ])
 
-  const [err, g] = await run(botA.friends.get)()
+  const [err, g] = await run(botA.friends.graph)()
   t.error(err)
   t.deepEqual(g, {
     [feedA.id]: {
-      [feedB.id]: true
+      [feedB.id]: 1
     },
     [feedB.id]: {
-      [feedC.id]: true
+      [feedC.id]: 1
     },
     [botA.id]: {
-      [feedA.id]: true,
-      [feedB.id]: true
+      [feedA.id]: 1,
+      [feedB.id]: 1
     }
   })
 
-  const [err2, g2] = await run(botA.friends.get)({ source: botA.id })
+  const [err2, g2] = await run(botA.friends.hops)({ start: botA.id, max: 1 })
   t.error(err2)
   t.deepEqual(g2, {
-    [feedA.id]: true,
-    [feedB.id]: true
+    [botA.id]: 0,
+    [feedA.id]: 1,
+    [feedB.id]: 1
   })
 
-  const [err3, g3] = await run(botA.friends.get)({ dest: feedB.id })
+  const [err3, g3] = await run(botA.friends.hops)({ start: feedB.id, reverse: true })
   t.error(err3)
   t.deepEqual(g3, {
-    [feedA.id]: true,
-    [botA.id]: true
+    [feedB.id]: 0,
+    [feedA.id]: 1,
+    [botA.id]: 1
   })
 
-  const [err4, follows] = await run(botA.friends.get)({ source: botA.id, dest: feedB.id })
+  const [err4, follows] = await run(botA.friends.isFollowing)({ source: botA.id, dest: feedB.id })
   t.error(err4)
   t.equal(follows, true)
 
-  const [err5, follows5] = await run(botA.friends.get)({ source: botA.id, dest: feedC.id })
+  const [err5, follows5] = await run(botA.friends.isFollowing)({ source: botA.id, dest: feedC.id })
   t.error(err5)
   t.notOk(follows5)
 
@@ -122,7 +126,7 @@ tape('legacy blocking / unblocking works', async (t) => {
     following: true
   })
 
-  const [err1, follows1] = await run(botA.friends.get)({
+  const [err1, follows1] = await run(botA.friends.isFollowing)({
     source: feedD.id,
     dest: feedE.id
   })
@@ -135,7 +139,7 @@ tape('legacy blocking / unblocking works', async (t) => {
     blocking: true
   })
 
-  const [err2, follows2] = await run(botA.friends.get)({
+  const [err2, follows2] = await run(botA.friends.isFollowing)({
     source: feedD.id,
     dest: feedE.id
   })
@@ -148,7 +152,7 @@ tape('legacy blocking / unblocking works', async (t) => {
     blocking: false
   })
 
-  const [err3, follows3] = await run(botA.friends.get)({
+  const [err3, follows3] = await run(botA.friends.isFollowing)({
     source: feedD.id,
     dest: feedE.id
   })

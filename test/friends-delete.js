@@ -9,12 +9,15 @@ const u = require('./util')
 // make sure the friends plugin analyzes correctly
 
 function liveFriends (ssbServer) {
-  const live = {}
+  const live = {
+    [ssbServer.id]: 0
+  }
   pull(
-    ssbServer.friends.createFriendStream({ live: true, meta: true }),
-    pull.drain((friend) => {
-      if (friend.sync) return
-      live[friend.id] = friend.hops
+    ssbServer.friends.graphStream(),
+    pull.drain((edge) => {
+      if (edge.source === ssbServer.id) {
+        live[edge.dest] = edge.value
+      }
     })
   )
   return live
@@ -67,19 +70,36 @@ tape('add and delete', async (t) => {
   const [err, hops] = await run(ssbServer.friends.hops)()
   t.error(err)
   t.deepEqual(live, hops)
-  t.end()
-})
 
-tape('createFriendStream after delete', (t) => {
-  pull(
-    ssbServer.friends.createFriendStream(),
-    pull.collect((err, ary) => {
-      t.notOk(err)
-      t.equal(ary.length, 2)
-      t.deepEqual(ary.sort(), [alice.id, bob.id].sort())
-      t.end()
-    })
-  )
+  const graph = await new Promise((resolve, reject) => {
+    try {
+      pull(
+        ssbServer.friends.graphStream({ live: false }),
+        pull.collect((err, ary) => {
+          if (err) reject(err)
+          else resolve(ary)
+        })
+      )
+    } catch (err) {
+      reject(err)
+    }
+  })
+  t.equals(graph.length, 1)
+  t.deepEquals(graph[0], {
+    [alice.id]: {
+      [bob.id]: 1,
+      [carol.id]: -1,
+    },
+    [bob.id]: {
+      [alice.id]: 1,
+      [carol.id]: -2,
+    },
+    [carol.id]: {
+      [alice.id]: 1,
+    }
+  })
+
+  t.end()
 })
 
 tape('cleanup', (t) => {

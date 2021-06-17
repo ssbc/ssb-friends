@@ -4,17 +4,16 @@ const ssbKeys = require('ssb-keys')
 const pull = require('pull-stream')
 const u = require('./util')
 
-function sort (ary) {
-  return ary.sort((a, b) => (a.id < b.id ? -1 : a.id === b.id ? 1 : 0))
-}
-
-function liveFriends (ssbServer) {
-  const live = {}
+function liveHops (ssbServer) {
+  const live = {
+    [ssbServer.id]: 0
+  }
   pull(
-    ssbServer.friends.createFriendStream({ live: true, meta: true }),
-    pull.drain((friend) => {
-      if (friend.sync) return
-      live[friend.id] = friend.hops
+    ssbServer.friends.hopStream({ live: true }),
+    pull.drain((hops) => {
+      for (const feedId of Object.keys(hops)) {
+        live[feedId] = hops[feedId]
+      }
     })
   )
   return live
@@ -31,7 +30,7 @@ const bob = ssbServer.createFeed()
 const carol = ssbServer.createFeed()
 
 tape('add friends, and retrieve all friends for a peer', async (t) => {
-  const live = liveFriends(ssbServer)
+  const live = liveHops(ssbServer)
 
   await Promise.all([
     run(alice.add)({
@@ -99,38 +98,6 @@ tape('add friends, and retrieve all friends for a peer', async (t) => {
   t.error(err6)
   t.deepEqual(live, hops)
   t.end()
-})
-
-tape('createFriendStream', (t) => {
-  pull(
-    ssbServer.friends.createFriendStream(),
-    pull.collect((err, ary) => {
-      t.notOk(err)
-      t.equal(ary.length, 3)
-      t.deepEqual(ary.sort(), [alice.id, bob.id, carol.id].sort())
-      t.end()
-    })
-  )
-})
-
-tape('createFriendStream - meta', (t) => {
-  pull(
-    ssbServer.friends.createFriendStream({ meta: true }),
-    pull.collect((err, ary) => {
-      t.notOk(err)
-      t.equal(ary.length, 3)
-      t.deepEqual(
-        sort(ary),
-        sort([
-          { id: alice.id, hops: 0 },
-          { id: bob.id, hops: 1 },
-          { id: carol.id, hops: 1 },
-        ])
-      )
-
-      t.end()
-    })
-  )
 })
 
 tape('cleanup', (t) => {
