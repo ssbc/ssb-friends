@@ -17,9 +17,11 @@
     "flumecodec": "0.0.1",
     "flumeview-reduce": "^1.3.17",
     "layered-graph": "^1.1.1",
+    "pull-cont": "^0.1.1",
     "pull-flatmap": "0.0.1",
     "pull-level": "^2.0.4",
     "pull-notify": "^0.1.1",
+    "pull-pushable": "^2.2.0",
     "pull-stream": "^3.6.0",
     "ssb-db2": "^2.0.0",
     "ssb-ref": "^2.7.1"

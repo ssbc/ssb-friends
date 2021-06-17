@@ -1,4 +1,6 @@
-'use strict'
+const pull = require('pull-stream')
+const Pushable = require('pull-pushable')
+const pCont = require('pull-cont')
 const LayeredGraph = require('layered-graph')
 const isFeed = require('ssb-ref').isFeed
 const contacts = require('./contacts')
@@ -10,17 +12,19 @@ const authGlue = require('./auth-glue')
 exports.name = 'friends'
 exports.version = '1.0.0'
 exports.manifest = {
-  hopStream: 'source',
-  onEdge: 'sync',
   follow: 'async',
   isFollowing: 'async',
   block: 'async',
   isBlocking: 'async',
   hops: 'async',
+  hopStream: 'source',
+  graph: 'async',
+  graphStream: 'source',
   help: 'sync',
-  // createLayer: 'sync',       // not exposed over RPC as returns a function
 
   // legacy:
+  onEdge: 'sync',
+  // createLayer: 'sync',       // not exposed over RPC as returns a function
   get: 'async',
   createFriendStream: 'source',
   stream: 'source'
@@ -84,7 +88,44 @@ exports.init = function (sbot, config) {
     sbot.publish(content, cb)
   }
 
-  function hops (opts, cb) {
+  function graph (cb) {
+    layered.onReady(() => {
+      if (sbot.db) {
+        sbot.db.onDrain('contacts', () => cb(null, layered.getGraph()))
+      } else {
+        cb(null, layered.getGraph())
+      }
+    })
+  }
+
+  function graphStream (opts) {
+    opts = opts || {}
+    const old = opts.old === true // default is false
+    const live = opts.live !== false // default is true
+    if (live) {
+      return pCont((cb) => {
+        layered.onReady(() => {
+          let p
+          const unsubscribe = layered.onEdge((source, dest, value) => {
+            p.push({source, dest, value})
+          })
+          p = Pushable(unsubscribe)
+          if (old) {
+            p.push(layered.getGraph())
+          }
+          cb(null, p)
+        })
+      })
+    } else {
+      return pCont((cb) => {
+        layered.onReady(() => {
+          cb(null, pull.once(layered.getGraph()))
+        })
+      })
+    }
+  }
+
+  function hops(opts, cb) {
     if (typeof opts === 'function') {
       cb = opts
       opts = {}
@@ -105,22 +146,21 @@ exports.init = function (sbot, config) {
   }
 
   return {
-    hopStream: layered.hopStream,
-    onEdge: layered.onEdge,
     follow: follow,
     block: block,
     isFollowing: isFollowing,
     isBlocking: isBlocking,
-
-    // expose createLayer, so that other plugins may express relationships
-    createLayer: layered.createLayer,
+    hops: hops,
+    hopStream: layered.hopStream,
+    graph: graph,
+    graphStream: graphStream,
+    help: () => help,
 
     // legacy, debugging
-    hops: hops,
-    help: () => help,
-    // legacy
+    onEdge: layered.onEdge,
+    createLayer: layered.createLayer,
     get: legacy.get,
     createFriendStream: legacy.createFriendStream,
-    stream: legacy.stream
+    stream: legacy.stream,
   }
 }
