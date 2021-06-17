@@ -79,8 +79,24 @@ tape('add friends, and retrieve all friends for a peer', async (t) => {
   t.error(err4)
   t.false(response4)
 
-  const [err5, hops] = await run(ssbServer.friends.hops)()
+  const [err5, graph] = await run(ssbServer.friends.graph)()
   t.error(err5)
+  t.deepEquals(graph, {
+    [alice.id]: {
+      [bob.id]: 1,
+      [carol.id]: 1,
+    },
+    [bob.id]: {
+      [alice.id]: 1,
+      [carol.id]: -1,
+    },
+    [carol.id]: {
+      [alice.id]: 1
+    }
+  })
+
+  const [err6, hops] = await run(ssbServer.friends.hops)()
+  t.error(err6)
   t.deepEqual(live, hops)
   t.end()
 })
