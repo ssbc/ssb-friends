@@ -25,7 +25,7 @@ exports.manifest = {
 exports.init = function (sbot, config) {
   if (!config.friends) config.friends = {}
   const max = config.friends.hops || 3
-  const layered = LayeredGraph({ max: max, start: sbot.id })
+  const layered = LayeredGraph({ max, start: sbot.id })
 
   if (sbot.db) {
     sbot.db.registerIndex(db2Contacts(layered.createLayer))
@@ -121,7 +121,7 @@ exports.init = function (sbot, config) {
     }
   }
 
-  function hops(opts, cb) {
+  function hops (opts, cb) {
     if (typeof opts === 'function') {
       cb = opts
       opts = {}
@@ -138,14 +138,14 @@ exports.init = function (sbot, config) {
   }
 
   return {
-    follow: follow,
-    block: block,
-    isFollowing: isFollowing,
-    isBlocking: isBlocking,
-    hops: hops,
+    follow,
+    block,
+    isFollowing,
+    isBlocking,
+    hops,
     hopStream: layered.hopStream,
-    graph: graph,
-    graphStream: graphStream,
+    graph,
+    graphStream,
     help: () => help,
   }
 }
