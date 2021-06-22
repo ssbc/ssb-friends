@@ -116,7 +116,7 @@ tape('friendly connection closes when no longer friendly (2)', async (t) => {
   const [err5] = await run(alice.publish)({
     type: 'contact',
     contact: bob.id,
-    blocking: true,
+    blocking: true
   })
   t.error(err5, 'alice blocks bob')
 

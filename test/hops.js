@@ -5,7 +5,7 @@ const u = require('./util')
 
 const botA = u.Server({
   friends: {
-    hops: 2,
+    hops: 2
   }
 })
 
@@ -24,7 +24,7 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
     pull.drain((m) => {
       for (const feedId of Object.keys(m)) {
         if (hops[feedId] !== m[feedId]) {
-          changes.push({[feedId]: m[feedId]})
+          changes.push({ [feedId]: m[feedId] })
         }
         hops[feedId] = m[feedId]
       }
@@ -41,7 +41,7 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
     contact: feedB.id,
     following: true
   })
-  t.deepEqual(changes, [ { [botA.id]: 0 } ])
+  t.deepEqual(changes, [{ [botA.id]: 0 }])
   changes.length = 0
 
   // feedB -> feedC

@@ -6,7 +6,7 @@ const u = require('./util')
 
 const botA = u.Server({
   friends: {
-    hops: 100,
+    hops: 100
   }
 })
 
@@ -110,7 +110,7 @@ tape('chill plugin order', t => {
 
   const bot = createSbot({
     friends: {
-      hops: 100,
+      hops: 100
     }
   })
 

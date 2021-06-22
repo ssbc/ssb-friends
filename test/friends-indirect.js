@@ -66,7 +66,7 @@ tape('hopStream live=false', (t) => {
     [alice.id]: 0,
     [bob.id]: 1,
     [carol.id]: 2,
-    [dan.id]: 3,
+    [dan.id]: 3
   }
 
   pull(
