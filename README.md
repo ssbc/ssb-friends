@@ -1,7 +1,7 @@
 # ssb-friends
 
-*Calculates the SSB social graph in SSB based on "contact" messages (such as
-follows and blocks), and provides APIs for you to query the social graph.*
+*Calculates the SSB social graph based on "contact" messages (such as follows
+and blocks), and provides APIs for you to query the social graph.*
 
 Based on [dynamic-dijkstra](https://github.com/dominictarr/dynamic-dijkstra)
 module, see its Readme for an in-depth discussion of the algorithm.
@@ -39,7 +39,7 @@ weights" section below):
 
 - **Following:** zero or positive
 - **Blocking:** -1
-- **Not following, not blocking:** -2
+- **Not following and not blocking:** -2
 
 There are APIs for creating follows and blocks (which under the hood will just
 publish messages of type `"contact"` on the log), and the are APIs for checking
