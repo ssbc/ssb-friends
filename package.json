@@ -1,6 +1,6 @@
 {
   "name": "ssb-friends",
-  "description": "",
+  "description": "Calculates the SSB social graph and provides APIs to query it",
   "version": "4.4.7",
   "homepage": "https://github.com/ssbc/ssb-friends",
   "scripts": {
