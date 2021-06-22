@@ -13,7 +13,7 @@ function liveFriends (ssbServer) {
     [ssbServer.id]: 0
   }
   pull(
-    ssbServer.friends.graphStream(),
+    ssbServer.friends.graphStream({ live: true, old: false }),
     pull.drain((edge) => {
       if (edge.source === ssbServer.id) {
         live[edge.dest] = edge.value
@@ -75,21 +75,10 @@ tape('add and delete', async (t) => {
   t.error(err)
   t.deepEqual(live, hops)
 
-  const graph = await new Promise((resolve, reject) => {
-    try {
-      pull(
-        ssbServer.friends.graphStream({ live: false }),
-        pull.collect((err, ary) => {
-          if (err) reject(err)
-          else resolve(ary)
-        })
-      )
-    } catch (err) {
-      reject(err)
-    }
-  })
-  t.equals(graph.length, 1)
-  t.deepEquals(graph[0], {
+  const [err2, graph] = await run(ssbServer.friends.graph)()
+  t.error(err2)
+
+  t.deepEquals(graph, {
     [alice.id]: {
       [bob.id]: 1,
       [carol.id]: -1,
