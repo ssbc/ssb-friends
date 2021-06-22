@@ -2,45 +2,46 @@
   "name": "ssb-friends",
   "description": "Calculates the SSB social graph and provides APIs to query it",
   "version": "4.4.7",
+  "author": "'Dominic Tarr' <dominic.tarr@gmail.com> (http://dominictarr.com)",
+  "license": "MIT",
   "homepage": "https://github.com/ssbc/ssb-friends",
-  "scripts": {
-    "test": "tape test/*.js | tap-spec",
-    "lint": "standard --fix",
-    "coverage": "nyc npm run test"
-  },
   "repository": {
     "type": "git",
     "url": "git://github.com/ssbc/ssb-friends.git"
   },
+  "main": "index.js",
+  "engines": {
+    "node": ">=10"
+  },
   "dependencies": {
-    "bipf": "^1.5.0",
+    "bipf": "^1.5.1",
     "flumecodec": "0.0.1",
     "flumeview-reduce": "^1.3.17",
-    "layered-graph": "^1.1.1",
+    "layered-graph": "^1.1.3",
     "pull-cont": "^0.1.1",
     "pull-flatmap": "0.0.1",
     "pull-level": "^2.0.4",
     "pull-notify": "^0.1.1",
     "pull-pushable": "^2.2.0",
     "pull-stream": "^3.6.0",
-    "ssb-db2": "^2.0.0",
-    "ssb-ref": "^2.7.1"
+    "ssb-db2": "^2.1.0",
+    "ssb-ref": "^2.13.0"
   },
   "devDependencies": {
     "nyc": "^15.1.0",
     "promisify-tuple": "^1.2.0",
-    "scuttle-testbot": "^1.3.0",
-    "secret-stack": "^6.1.2",
+    "scuttle-testbot": "^1.6.0",
+    "secret-stack": "^6.4.0",
     "ssb-caps": "^1.1.0",
     "ssb-generate": "^1.0.1",
     "ssb-tribes": "^0.4.1",
     "standard": "^16.0.2",
     "tap-spec": "^5.0.0",
-    "tape": "^4.10.0"
+    "tape": "^5.2.2"
   },
-  "engines": {
-    "node": ">=10"
-  },
-  "author": "'Dominic Tarr' <dominic.tarr@gmail.com> (http://dominictarr.com)",
-  "license": "MIT"
+  "scripts": {
+    "test": "tape test/*.js | tap-spec",
+    "lint": "standard --fix",
+    "coverage": "nyc npm run test"
+  }
 }
