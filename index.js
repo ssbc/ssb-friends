@@ -96,8 +96,8 @@ exports.init = function (sbot, config) {
 
   function graphStream (opts) {
     opts = opts || {}
-    const old = opts.old === true // default is false
-    const live = opts.live !== false // default is true
+    const live = opts.live === true // default is false
+    const old = opts.old !== false // default is true
     if (live) {
       return pCont((cb) => {
         onReady(() => {
