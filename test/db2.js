@@ -54,6 +54,7 @@ tape('db2 friends test', async (t) => {
   const alice = ssbKeys.generate()
   const bob = ssbKeys.generate()
   const carol = ssbKeys.generate()
+  const david = ssbKeys.generate()
 
   let sbot = Server({
     keys: alice,
@@ -80,11 +81,18 @@ tape('db2 friends test', async (t) => {
       following: false,
       flagged: true
     }),
+    addMsg(sbot.db, bob, u.block(david.id)),
     addMsg(sbot.db, carol, u.follow(alice.id))
   ])
 
   const [err, hops] = await run(sbot.friends.hops)()
   t.error(err)
+  t.deepEqual(hops, {
+    [alice.id]: 0,
+    [bob.id]: 1,
+    [carol.id]: 1,
+    [david.id]: -2,
+  })
   t.deepEqual(live, hops)
 
   await run(sbot.close)()
@@ -98,11 +106,20 @@ tape('db2 friends test', async (t) => {
   })
   live = liveHops(sbot)
 
-  const [err2] = await addMsg(sbot.db, bob, u.follow(carol.id))
+  const [err2] = await addMsg(sbot.db, alice, u.unfollow(carol.id))
   t.error(err2)
+  const [err3] = await addMsg(sbot.db, bob, u.follow(carol.id))
+  t.error(err3)
 
-  await run(sbot.db.onDrain)('contacts')
-  t.deepEqual(live, hops)
+  const [err4, hops2] = await run(sbot.friends.hops)()
+  t.error(err4)
+  t.deepEqual(live, {
+    [alice.id]: 0,
+    [bob.id]: 1,
+    [carol.id]: 2,
+    [david.id]: -2,
+  })
+  t.deepEqual(live, hops2)
 
   await run(sbot.close)()
   t.end()
