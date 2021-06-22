@@ -10,7 +10,7 @@ module, see its Readme for an in-depth discussion of the algorithm.
 
 **Prerequisites:**
 
-- Requires **Node.js 8** or higher
+- Requires **Node.js 10** or higher
 - Requires **ssb-db** or **ssb-db2**
 
 ```
