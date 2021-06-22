@@ -81,14 +81,14 @@ tape('add and delete', async (t) => {
   t.deepEquals(graph, {
     [alice.id]: {
       [bob.id]: 1,
-      [carol.id]: -1,
+      [carol.id]: -1
     },
     [bob.id]: {
       [alice.id]: 1,
-      [carol.id]: -2,
+      [carol.id]: -2
     },
     [carol.id]: {
-      [alice.id]: 1,
+      [alice.id]: 1
     }
   })
 

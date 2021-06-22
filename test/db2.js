@@ -31,7 +31,7 @@ const dir = path.join(os.tmpdir(), 'friends-db2')
 rimraf.sync(dir)
 mkdirp.sync(dir)
 
-function Server(opts = {}) {
+function Server (opts = {}) {
   const stack = SecretStack({ caps })
     .use(require('ssb-db2'))
     .use(require('..'))
@@ -41,11 +41,11 @@ function Server(opts = {}) {
 
 let state = validate.initial()
 
-function addMsg(db, keys, content) {
+function addMsg (db, keys, content) {
   state = validate.appendNew(state, null, keys, content, Date.now())
 
   return run((cb) => {
-    value = state.queue.shift().value
+    const value = state.queue.shift().value
     db.add(value, cb)
   })()
 }
@@ -60,7 +60,7 @@ tape('db2 friends test', async (t) => {
     keys: alice,
     db2: true,
     friends: {
-      hookAuth: false,
+      hookAuth: false
     },
     path: dir
   })
@@ -91,7 +91,7 @@ tape('db2 friends test', async (t) => {
     [alice.id]: 0,
     [bob.id]: 1,
     [carol.id]: 1,
-    [david.id]: -2,
+    [david.id]: -2
   })
   t.deepEqual(live, hops)
 
@@ -100,7 +100,7 @@ tape('db2 friends test', async (t) => {
     keys: alice,
     db2: true,
     friends: {
-      hookAuth: false,
+      hookAuth: false
     },
     path: dir
   })
@@ -117,7 +117,7 @@ tape('db2 friends test', async (t) => {
     [alice.id]: 0,
     [bob.id]: 1,
     [carol.id]: 2,
-    [david.id]: -2,
+    [david.id]: -2
   })
   t.deepEqual(live, hops2)
 
@@ -137,7 +137,7 @@ tape('db2 unfollow', async (t) => {
     keys: alice,
     db2: true,
     friends: {
-      hookAuth: false,
+      hookAuth: false
     },
     path: dir
   })
@@ -159,7 +159,7 @@ tape('db2 unfollow', async (t) => {
     keys: alice,
     db2: true,
     friends: {
-      hookAuth: false,
+      hookAuth: false
     },
     path: dir
   })
@@ -177,7 +177,7 @@ tape('db2 unfollow', async (t) => {
     keys: alice,
     db2: true,
     friends: {
-      hookAuth: false,
+      hookAuth: false
     },
     path: dir
   })

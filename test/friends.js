@@ -53,13 +53,13 @@ tape('add friends, and retrieve all friends for a peer', async (t) => {
   // alice isFollowing bob, and NOT isBlocking bob
   const [err1, response1] = await run(ssbServer.friends.isFollowing)({
     source: alice.id,
-    dest: bob.id,
+    dest: bob.id
   })
   t.error(err1)
   t.true(response1)
   const [err2, response2] = await run(ssbServer.friends.isBlocking)({
     source: alice.id,
-    dest: bob.id,
+    dest: bob.id
   })
   t.error(err2)
   t.false(response2)
@@ -67,13 +67,13 @@ tape('add friends, and retrieve all friends for a peer', async (t) => {
   // bob isBlocking carol, and NOT isFollowing carol
   const [err3, response3] = await run(ssbServer.friends.isBlocking)({
     source: bob.id,
-    dest: carol.id,
+    dest: carol.id
   })
   t.error(err3)
   t.true(response3)
   const [err4, response4] = await run(ssbServer.friends.isFollowing)({
     source: bob.id,
-    dest: carol.id,
+    dest: carol.id
   })
   t.error(err4)
   t.false(response4)
@@ -83,11 +83,11 @@ tape('add friends, and retrieve all friends for a peer', async (t) => {
   t.deepEquals(graph, {
     [alice.id]: {
       [bob.id]: 1,
-      [carol.id]: 1,
+      [carol.id]: 1
     },
     [bob.id]: {
       [alice.id]: 1,
-      [carol.id]: -1,
+      [carol.id]: -1
     },
     [carol.id]: {
       [alice.id]: 1

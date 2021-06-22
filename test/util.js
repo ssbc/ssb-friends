@@ -5,8 +5,7 @@ exports.Server = function Testbot (opts = {}) {
   let stack = Server
     .use(require('..'))
 
-  if (opts.tribes === true)
-    stack = stack.use(require('ssb-tribes'))
+  if (opts.tribes === true) { stack = stack.use(require('ssb-tribes')) }
 
   return stack(opts)
 }

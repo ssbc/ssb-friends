@@ -19,7 +19,7 @@ exports.manifest = {
   hopStream: 'source',
   graph: 'async',
   graphStream: 'source',
-  help: 'sync',
+  help: 'sync'
 }
 
 exports.init = function (sbot, config) {
@@ -101,11 +101,10 @@ exports.init = function (sbot, config) {
     if (live) {
       return pCont((cb) => {
         onReady(() => {
-          let p
           const unsubscribe = layered.onEdge((source, dest, value) => {
-            p.push({source, dest, value})
+            p.push({ source, dest, value })
           })
-          p = Pushable(unsubscribe)
+          const p = Pushable(unsubscribe)
           if (old) {
             p.push(layered.getGraph())
           }
@@ -146,6 +145,6 @@ exports.init = function (sbot, config) {
     hopStream: layered.hopStream,
     graph,
     graphStream,
-    help: () => help,
+    help: () => help
   }
 }
