@@ -1,199 +1,201 @@
 # ssb-friends
 
-The logic of who to replicate in ssb.
+*Calculates the SSB social graph in SSB based on "contact" messages (such as
+follows and blocks), and provides APIs for you to query the social graph.*
 
-based on [dynamic-dijkstra](https://github.com/dominictarr/dynamic-dijkstra) module,
-see that readme to see in depth discussion of the algorithm.
+Based on [dynamic-dijkstra](https://github.com/dominictarr/dynamic-dijkstra)
+module, see its Readme for an in-depth discussion of the algorithm.
 
-the relation between any two peers can be in 3 states.
-following, not following, and blocking.
+## Installation
 
+**Prerequisites:**
 
-* _following_ means you will definitely replicate them.
-* _not following_ means you might not replicate them,
-but you might replicate them if your friend follows them.
-* _blocking_ means that you will not replicate them.
-  if they are blocked by someone you follow, and you are not following them, then you will not replicate them.
-* if a friend of blocks someone, they will not be replicated, unless another friend follows them.
-* if one friend blocks, and another follows, they will be replicated
-  but their friends won't be (this is to stop sybil swarms)
-
-
-## API
-
-this comes built into `ssb-server` by default, you are probably using this api by writing a client
-app or using sbot from a cli tool.
-
-> Note: synchronous methods called over a `ssb-client` connection are converted into asynchronous methods (a callback is added as the final argument which will be called back with the result)
-
-<!-- TODO expose this as api? (collides with legacy get)
-### getRaw (cb)
-
-get the current state of the graph. it is of the form:
+- Requires **Node.js 8** or higher
+- Requires **ssb-db** or **ssb-db2**
 
 ```
-{
-  <alice_id>: {<bob_id>:<dist>,...},...
-}
-
+npm install --save ssb-friends
 ```
 
-where `<dist>` is a non-zero number. (negative indicates blocking).
-a value of 1 < 1.5 is considered to mean "follows" and 0 < 0.5 is considered to mean "same as"
--->
+Add this secret-stack plugin like this:
 
-### `ssb.friends.hopStream () => Source`
+```diff
+ const SecretStack = require('secret-stack')
+ const caps = require('ssb-caps')
 
-return a stream of hops objects `{<id>:<dist>,...}`, the first item is the current state,
-any following objects are updates caused by someone in your network following, unfollowing or blocking someone.
-
-### `ssb.friends.onEdge (fn) => removeListener`
-
-subscribe to changes in the graph.
-This can only be called locally by another in-process scuttlebot plugin.
-
-### `ssb.friends.hops(cb)`
-
-retrive the current hops state, which is an Object of form
-```
-{
-  FeedId: distance // distance from you in hops
-}
+ const createSsbServer = SecretStack({ caps })
+     .use(require('ssb-master'))
+     .use(require('ssb-db'))
++    .use(require('ssb-friends'))
+     .use(require('ssb-conn'))
+     // ...
 ```
 
-**Advanced**
-you can call this method with signature`hops(opts, cb)`, where opts is an Object with (optional) keys : 
+## Usage
 
-- `start`: calculate hops from/to a different node.
-- `reverse`: return hops to start instead of from start.
-- `max`: set a different max distance. If the max is smaller than the default passed to the constructor, the output will be fastest, because it will just copy the cached value, but skip nodes at a greater distance than max.
+In ssb-friends, the relation between any two peers can be in 3 states, and each
+of those states are expressed by the following numbers (read more in the "Edge
+weights" section below):
 
+- **Following:** zero or positive
+- **Blocking:** -1
+- **Not following, not blocking:** -2
+
+There are APIs for creating follows and blocks (which under the hood will just
+publish messages of type `"contact"` on the log), and the are APIs for checking
+whether A follows or blocks B.
+
+Then, there are social graph APIs such as `hops` and `hopStream`, which
+calculate "social graph distances" from you to other peers.
+
+And there are low-level social graph APIs such as `graph` and `graphStream`
+which just tell you the latest edges in the social graph, without calculating
+distances.
 
 ### `ssb.friends.follow(feedId, opts, cb)`
 
-publishes a contact message asserting your current following state for `feedId`
+Publishes a contact message asserting your current following state for `feedId`.
 
-`opts` is an Object with (optional) properties:
-- `state` *Boolean* - whether you are saying you are asserting (or undoing) a follow. (Default: `true`)
-- `recps` *Array* - an array of recipients in case you want to publish this follow privately to some feeds / groups (see e.g. `ssb-tribes`)
+`opts` must be an object (or `null`) with these (optional) properties:
 
-### `ssb.friends.isFollowing({source, dest}, cb)`
-
-calls back true if `source` follows `dest`, false otherwise.
-
+- `state` *Boolean* - whether you are asserting (`true`) or undoing (`false`) a
+follow. (Default: `true`)
+- `recps` *Array* - an array of feed IDs of recipients in case you want to
+publish this contact message privately to some feeds / groups (see e.g.
+`ssb-tribes`)
 
 ### `ssb.friends.block(feedId, opts, cb)`
 
-publishes a contact message asserting your current following state for `feedId`
+Publishes a contact message asserting your current blocking state for `feedId`.
 
-`opts` is an Object with (optional) properties:
-- `state` *Boolean* - whether you are saying you are asserting (or undoing) a block. (Default: `true`)
-- `reason` *String* - a description about why you're blocking (or unblocking) this account
-- `recps` *Array* - an array of recipients in case you want to publish this block privately to some feeds / groups (see e.g. `ssb-tribes`)
+`opts` must be an object (or `null`) with these (optional) properties:
+
+- `state` *Boolean* - whether you are asserting (`true`) or undoing (`false`) a
+block. (Default: `true`)
+- `reason` *String* - a description about why you're blocking (or unblocking)
+this peer
+- `recps` *Array* - an array of feed IDs of recipients in case you want to
+publish this contact message privately to some feeds / groups (see e.g.
+`ssb-tribes`)
+
+### `ssb.friends.isFollowing(opts, cb)`
+
+Calls back `true` if `opts.source` follows `opts.dest`, `false` otherwise.
+
+`opts.source` and `opts.dest` are strings of SSB Feed IDs.
 
 ### `ssb.friends.isBlocking({source, dest}, cb)`
 
-calls back true if `source` blocks `dest`, false otherwise.
+Calls back `true` if `opts.source` blocks `opts.dest`, `false` otherwise.
 
-### ssb.friends.createLayer(name)`
+`opts.source` and `opts.dest` are strings of SSB Feed IDs.
 
-Create a layer with `name`, this feature is exposed from [layered-graph](https://github.com/dominictarr/layered-graph)
+### `ssb.friends.hops([opts,] cb)`
 
-This enables plugins to provide different views on feed relationships, and then combine them together. This method is not available remotely (over RPC).
-
-As an example, here is code to make a view that only track old-style pub follows.
-
-``` js
-  var layer = sbot.friends.createLayer('pubs')
-  var init = false //keep track of wether we have initialized the layer.
-
-  var view = sbot._flumeUse('pubs', Reduce(1, function (g, data) {
-    g = g || {}
-    var content = data.value.content
-    if(
-      content.type === 'contact' &&
-      isFeed(content.contact) &&
-      content.following === true &&
-      (content.autofollow === true || content.pub === true)
-    ) {
-      var from = data.value.author, to = content.contact
-      g[from] = g[from] || {}
-      g[from][to] = 1
-      //updating an edge in the layer should be handled within the view reduce function,
-      //but only after it has been initialized.
-      if(init) layer(from, to, 1)
-    }
-    return g
-  })
-
-  //if we call view.get like this, it will delay until this view is in sync with the main log.
-  //
-  view.get(function (err, value) {
-    init = true
-    layer(value)
-  })
+Retrieves the current hops state, which is an object of the shape
 
 ```
+{
+  FeedId1: distance, // distance from you in hops
+  FeedId2: distance,
+  FeedId3: distance,
+}
+```
 
-## dynamic dijkstra
+(**Advanced**) `opts` is an optional object, which allows you to configure the
+calculation of the hops distances with the following object fields:
 
-Since version 3, this module is now implemented in terms of [dynamic-dijkstra](https://github.com/dominictarr/dynamic-dijkstra) (via [layered-graph](https://github.com/ssbc/layered-graph)).
-DD is about traversing graphs that have real time updates.
+- `opts.start` *String* - feed ID of the "central" node where distance is zero.
+(Default: `sbot.id`)
+- `opts.max` *Number* - a max distance, where nodes beyond this distance are
+omitted from the output. If the max is equal to or less than the default
+(`config.friends.hops`), the output will be faster to calculate, because it will
+just copy the cached value, but skip nodes at a greater distance than max.
+(Default: `config.friends.hops` or 3)
+- `opts.reverse` *Boolean* - when `true`, the output is the hops distance **to*
+`opts.start`, instead of **from** `opts.start`. (Default: `false`)
+
+### `ssb.friends.hopStream([opts]) => Source`
+
+Return a stream of hops objects `{<id>:<dist>,...}`, where the first item is the
+current state (such as what `ssb.friends.hops()` returns), and any following
+objects are updates caused by someone in your network following, unfollowing or
+blocking someone.
+
+Can be configured via an `opts` argument, although arguably *less* configurable
+than `ssb.friends.hops()` because it only supports the following fields:
+
+- `opts.old` *Boolean* - whether or not to include the current state (such as
+what `ssb.friends.hops()` returns). (Default: `true`)
+- `opts.live` *Boolean* - whether or not to include subsequent updates.
+(Default: `false`)
+
+### `ssb.friends.graph(cb)`
+
+Retrieves the current state of the social graph, which is an object of the shape
+
+```
+{
+  FeedId1: {
+    FeedId2: value, // a weight for the edge FeedId1 => FeedId2
+  },
+  FeedId3: {
+    FeedId4: value,
+    FeedId5: value,
+  },
+}
+```
+
+The `value` is a number, where its meaning is described at the top of this
+README.
+
+### `ssb.friends.graphStream([opts]) => Source`
+
+Returns a stream of social graph objects, where
+
+**The first object in the stream** (only if `opts.old` is true) has the same
+shape as what `ssb.friends.graph()` returns.
+
+
+And **subsequent objects in the stream** (only if `opts.live` is true) have the
+shape
+
+```
+{
+  source: FeedId,
+  dest: FeedId,
+  value: value, // a weight for the edge source => dest
+}
+```
+
+- `opts.old` *Boolean* - whether or not to include the current state (such as
+what `ssb.friends.graph()` returns). (Default: `true`)
+- `opts.live` *Boolean* - whether or not to include subsequent updates of edges
+in the social graph.
+(Default: `false`)
+
+## Edge weights
+
+This module is implemented in terms of [dynamic-dijkstra](https://github.com/dominictarr/dynamic-dijkstra)
+(via [layered-graph](https://github.com/ssbc/layered-graph)).
 
 Relations between feeds are represented as non-zero numbers, as follows:
 
-In ssb we use 1 to represent follow, -1 to represent block, -2 to represent unfollow, and 0.1
-to represent "same-as". A feed with path length 2 is a "friend of a friend" (we follow someone +1
-who follows them + 1 = 2). If you block someone, that is -1. so -2 can mean blocked by a friend or unfollowed.
-min defines a positive length to be less than the negative length with the same absolute value,
-`min(-n, n) == n` so if a friend follows someone another friend blocks, the friends follow wins,
-(but if you block them directly, that block wins over the friend's follow)
+In SSB we use `1` to represent a follow, `-1` to represent a block, `-2` to
+represent unfollow, and `0.1` to represent "same-as".
 
-`expand(length, max)` return false if `length < 0`, or `length > max`.
+A feed with distance `2` is a "friend of a friend" (we follow someone `+1`
+who follows them `+1` which sums up as `2`). The distance `-2` can mean either
+blocked by a friend or unfollowed by us.
 
-`isAdd(v)` returns true if `v >= 0`
+If a friend follows someone another friend blocks, the friends follow wins,
+but if you block them directly, that block wins over the friend's follow.
 
-same-as is represented by very low weights (i.e. `0.1`)  to link two devices `a, b` together,
-we have edges `a->b` and `b->a`. Low weights can also be used for delegation.
-Say, a blocklist `l` can be implemented as a node that only blocks, then someone `x` subscribes
-to that blocklist by adding edge `x->l` with a weight of `0.1`.
-
-
-
-## legacy API
-
-The following apis are intended to be backwards compatible with earlier versions of ssb-friends.
-They will hopefully be removed once clients have had a chance to update. It's recommended to
-use the non-legacy apis for new software. Also, the new graph data structure has a decimal
-edge weighting, but these apis return boolean (true = follow or same-as, false = block, null = unfollow)
-
-### get ({source?, dest?}, cb)
-
-get the follow graph, or a portion of the follow graph. If neither `source` or `dest` are provided,
-the full follow graph will be returned. If `source` is provided, the result will be the map
-of all feeds that the source has relationship edges to (including follow and block), if only
-`dest` is provided, the result will be the same form, but it will represent feeds that follow the `dest`.
-If _both_ `source` and `dest` are provided, the result will be a single value: true if `source` follows `dest`, false if they are blocked, or null if they do not follow (or have unfollowed)
-
-### createFriendStream ({meta, live, old}) => Source
-
-returns a source stream of the hops. if `meta` is true,
-each item is in the form `{id: <id>, hops: <hops>}`, otherwise, each item is just the `<id>`.
-if `old` is false, current values will not be streamed. If live is true, the stream will stay open
-but do nothing until hops changes due to the addition of new edges.
-
-### stream ({live, old})
-
-Create a stream of changes to the graph.
-The first item is the graph structure
-`{<id>: {<id>: <value>,...}, ...}`
-
-The rest of the values are real time changes, of the form `{from: <id>, to: <id>, value: <value>}`
-value is a boolean or null, as with the other legacy apis.
-
-> note: I am considering a graph stream api were the rest are the same form as the graph structure,
-and merging those objects gets the updated graph. for a single edge `<from>-><to>`
-it would look like `{<from>: {<to>: <value>}}`
+"same-as" is represented by very low weights (such as `0.1`). To link two
+devices `a, b` together, we have edges `a->b` and `b->a` with very low weights.
+Low weights can also be used for delegation. Say, a blocklist `L` can be
+implemented as a node that only blocks, then someone `A` subscribes
+to that blocklist by adding edge `A->L` with a weight of `0.1`.
 
 ## License
 
