@@ -52,7 +52,7 @@ And there are low-level social graph APIs such as `graph` and `graphStream`
 which just tell you the latest edges in the social graph, without calculating
 distances.
 
-### `ssb.friends.follow(feedId, opts, cb)`
+### `ssb.friends.follow(feedId, opts, cb)` ("async" muxrpc API)
 
 Publishes a contact message asserting your current following state for `feedId`.
 
@@ -64,7 +64,7 @@ follow. (Default: `true`)
 publish this contact message privately to some feeds / groups (see e.g.
 `ssb-tribes`)
 
-### `ssb.friends.block(feedId, opts, cb)`
+### `ssb.friends.block(feedId, opts, cb)` ("async" muxrpc API)
 
 Publishes a contact message asserting your current blocking state for `feedId`.
 
@@ -78,19 +78,19 @@ this peer
 publish this contact message privately to some feeds / groups (see e.g.
 `ssb-tribes`)
 
-### `ssb.friends.isFollowing(opts, cb)`
+### `ssb.friends.isFollowing(opts, cb)` ("async" muxrpc API)
 
 Calls back `true` if `opts.source` follows `opts.dest`, `false` otherwise.
 
 `opts.source` and `opts.dest` are strings of SSB Feed IDs.
 
-### `ssb.friends.isBlocking({source, dest}, cb)`
+### `ssb.friends.isBlocking({source, dest}, cb)` ("async" muxrpc API)
 
 Calls back `true` if `opts.source` blocks `opts.dest`, `false` otherwise.
 
 `opts.source` and `opts.dest` are strings of SSB Feed IDs.
 
-### `ssb.friends.hops([opts,] cb)`
+### `ssb.friends.hops([opts,] cb)` ("async" muxrpc API)
 
 Retrieves the current hops state, which is an object of the shape
 
@@ -115,7 +115,7 @@ just copy the cached value, but skip nodes at a greater distance than max.
 - `opts.reverse` *Boolean* - when `true`, the output is the hops distance **to*
 `opts.start`, instead of **from** `opts.start`. (Default: `false`)
 
-### `ssb.friends.hopStream([opts]) => Source`
+### `ssb.friends.hopStream([opts])` ("source" muxrpc API)
 
 Return a stream of hops objects `{<id>:<dist>,...}`, where the first item is the
 current state (such as what `ssb.friends.hops()` returns), and any following
@@ -130,7 +130,7 @@ what `ssb.friends.hops()` returns). (Default: `false`)
 - `opts.live` *Boolean* - whether or not to include subsequent updates.
 (Default: `true`)
 
-### `ssb.friends.graph(cb)`
+### `ssb.friends.graph(cb)` ("async" muxrpc API)
 
 Retrieves the current state of the social graph, which is an object of the shape
 
@@ -149,7 +149,7 @@ Retrieves the current state of the social graph, which is an object of the shape
 The `value` is a number, where its meaning is described at the top of this
 README.
 
-### `ssb.friends.graphStream([opts]) => Source`
+### `ssb.friends.graphStream([opts])` ("source" muxrpc API)
 
 Returns a stream of social graph objects, where each object has the same shape as the output of `ssb.friends.graph()`. The first object in the stream (only if `opts.old` is true) reflects the current state of the social graph, and subsequent objects (only if `opts.live` is true) represent just one updated edge, in the shape `{ FeedId1: { FeedId2: value } }`.
 
