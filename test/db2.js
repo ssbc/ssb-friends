@@ -16,7 +16,7 @@ function liveHops (ssbServer) {
     [ssbServer.id]: 0
   }
   pull(
-    ssbServer.friends.hopStream({ live: true }),
+    ssbServer.friends.hopStream({ live: true, old: true }),
     pull.drain((hops) => {
       for (const feedId of Object.keys(hops)) {
         live[feedId] = hops[feedId]

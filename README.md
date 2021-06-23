@@ -126,9 +126,9 @@ Can be configured via an `opts` argument, although arguably *less* configurable
 than `ssb.friends.hops()` because it only supports the following fields:
 
 - `opts.old` *Boolean* - whether or not to include the current state (such as
-what `ssb.friends.hops()` returns). (Default: `true`)
+what `ssb.friends.hops()` returns). (Default: `false`)
 - `opts.live` *Boolean* - whether or not to include subsequent updates.
-(Default: `false`)
+(Default: `true`)
 
 ### `ssb.friends.graph(cb)`
 
@@ -169,10 +169,10 @@ shape
 ```
 
 - `opts.old` *Boolean* - whether or not to include the current state (such as
-what `ssb.friends.graph()` returns). (Default: `true`)
+what `ssb.friends.graph()` returns). (Default: `false`)
 - `opts.live` *Boolean* - whether or not to include subsequent updates of edges
 in the social graph.
-(Default: `false`)
+(Default: `true`)
 
 ## Edge weights
 

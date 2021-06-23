@@ -12,7 +12,7 @@ const botA = u.Server({
 
 tape('empty database follow self', function (t) {
   pull(
-    botA.friends.hopStream(),
+    botA.friends.hopStream({ old: true, live: false }),
     pull.collect((err, a) => {
       t.error(err)
       t.deepEqual(a, [{ [botA.id]: 0 }])
@@ -55,6 +55,7 @@ tape('live follows works', async (t) => {
   pull(
     botA.friends.hopStream({
       live: true,
+      old: true,
       meta: true,
       hops: 10
     }),
