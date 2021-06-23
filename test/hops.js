@@ -18,6 +18,7 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
   pull(
     botA.friends.hopStream({
       live: true,
+      old: true,
       meta: true,
       hops: 2
     }),

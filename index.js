@@ -95,9 +95,10 @@ exports.init = function (sbot, config) {
   }
 
   function graphStream (opts) {
-    opts = opts || {}
-    const live = opts.live === true // default is false
-    const old = opts.old !== false // default is true
+    const {
+      live = true,
+      old = false
+    } = opts || {}
     if (live) {
       return pCont((cb) => {
         onReady(() => {
@@ -131,6 +132,14 @@ exports.init = function (sbot, config) {
     })
   }
 
+  function hopStream (opts) {
+    const {
+      live = true,
+      old = false
+    } = opts || {}
+    return layered.hopStream({ live, old, ...opts })
+  }
+
   // Make sure blocked peers cannot connect, default is true
   if (config.friends.hookAuth !== false) {
     authGlue(sbot, layered, isBlocking)
@@ -142,7 +151,7 @@ exports.init = function (sbot, config) {
     isFollowing,
     isBlocking,
     hops,
-    hopStream: layered.hopStream,
+    hopStream,
     graph,
     graphStream,
     help: () => help

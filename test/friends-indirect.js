@@ -13,7 +13,7 @@ function liveHops (ssbServer) {
     [ssbServer.id]: 0
   }
   pull(
-    ssbServer.friends.hopStream({ live: true }),
+    ssbServer.friends.hopStream({ live: true, old: true }),
     pull.drain((hops) => {
       for (const feedId of Object.keys(hops)) {
         live[feedId] = hops[feedId]
@@ -70,7 +70,7 @@ tape('hopStream live=false', (t) => {
   }
 
   pull(
-    ssbServer.friends.hopStream({ live: false }),
+    ssbServer.friends.hopStream({ live: false, old: true }),
     pull.collect((err, ary) => {
       if (err) throw err
       t.equals(ary.length, 1)
