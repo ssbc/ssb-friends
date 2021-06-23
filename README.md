@@ -151,22 +151,7 @@ README.
 
 ### `ssb.friends.graphStream([opts]) => Source`
 
-Returns a stream of social graph objects, where
-
-**The first object in the stream** (only if `opts.old` is true) has the same
-shape as what `ssb.friends.graph()` returns.
-
-
-And **subsequent objects in the stream** (only if `opts.live` is true) have the
-shape
-
-```
-{
-  source: FeedId,
-  dest: FeedId,
-  value: value, // a weight for the edge source => dest
-}
-```
+Returns a stream of social graph objects, where each object has the same shape as the output of `ssb.friends.graph()`. The first object in the stream (only if `opts.old` is true) reflects the current state of the social graph, and subsequent objects (only if `opts.live` is true) represent just one updated edge, in the shape `{ FeedId1: { FeedId2: value } }`.
 
 - `opts.old` *Boolean* - whether or not to include the current state (such as
 what `ssb.friends.graph()` returns). (Default: `false`)

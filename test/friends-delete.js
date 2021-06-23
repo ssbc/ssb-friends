@@ -14,9 +14,13 @@ function liveFriends (ssbServer) {
   }
   pull(
     ssbServer.friends.graphStream({ live: true, old: false }),
-    pull.drain((edge) => {
-      if (edge.source === ssbServer.id) {
-        live[edge.dest] = edge.value
+    pull.drain((graph) => {
+      for (const source of Object.keys(graph)) {
+        if (source === ssbServer.id) {
+          for (const dest of Object.keys(graph[source])) {
+            live[dest] = graph[source][dest]
+          }
+        }
       }
     })
   )

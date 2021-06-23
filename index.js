@@ -103,7 +103,7 @@ exports.init = function (sbot, config) {
       return pCont((cb) => {
         onReady(() => {
           const unsubscribe = layered.onEdge((source, dest, value) => {
-            p.push({ source, dest, value })
+            p.push({ [source]: { [dest]: value } })
           })
           const p = Pushable(unsubscribe)
           if (old) {
