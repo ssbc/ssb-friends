@@ -16,9 +16,9 @@ tape('graphStream', async (t) => {
 
   const expected = [
     {},
-    { source: feedA.id, dest: feedB.id, value: 1 },
-    { source: feedB.id, dest: feedC.id, value: 1 },
-    { source: feedC.id, dest: feedA.id, value: -1 }
+    { [feedA.id]: { [feedB.id]: 1 } },
+    { [feedB.id]: { [feedC.id]: 1 } },
+    { [feedC.id]: { [feedA.id]: -1 } }
   ]
   t.plan(expected.length)
 
