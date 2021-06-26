@@ -95,10 +95,6 @@ tape('live follows works', async (t) => {
 
   t.deepEqual(notSeen, {})
   t.deepEqual(count, peers.length, 'all peers streamed')
-  // b.forEach(function (e) { t.ok(e.hops <= 1, 'b '+e.hops+' hops <= 1') })
-  // c.forEach(function (e) { t.ok(e.hops <= 2, 'c '+e.hops+' hops <= 2') })
-  // t.ok(a.length >= b.length, '1 hops')
-  // t.ok(c.length >= b.length, '2 hops')
 
   const [err3] = await run(botA.close)()
   t.error(err3)
@@ -120,4 +116,21 @@ tape('chill plugin order', t => {
     t.error(err, 'close bot')
     t.end()
   })
+})
+
+tape('silly config.friends.hops', async (t) => {
+  const bot = u.Server({
+    friends: {
+      hops: -1.5,
+    },
+  })
+
+  await run(bot.add)(u.follow(bot.createFeed().id))
+
+  const [err, graph] = await run(bot.friends.graph)()
+  t.error(err)
+  t.deepEquals(graph, {}, 'no one in the graph')
+
+  await run(bot.close)(true)
+  t.end()
 })
