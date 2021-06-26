@@ -167,7 +167,7 @@ This module is implemented in terms of [dynamic-dijkstra](https://github.com/dom
 Relations between feeds are represented as non-zero numbers, as follows:
 
 In SSB we use `1` to represent a follow, `-1` to represent a block, `-2` to
-represent unfollow, and `0.1` to represent "same-as".
+represent unfollow.
 
 A feed with distance `2` is a "friend of a friend" (we follow someone `+1`
 who follows them `+1` which sums up as `2`). The distance `-2` can mean either
@@ -175,12 +175,6 @@ blocked by a friend or unfollowed by us.
 
 If a friend follows someone another friend blocks, the friends follow wins,
 but if you block them directly, that block wins over the friend's follow.
-
-"same-as" is represented by very low weights (such as `0.1`). To link two
-devices `a, b` together, we have edges `a->b` and `b->a` with very low weights.
-Low weights can also be used for delegation. Say, a blocklist `L` can be
-implemented as a node that only blocks, then someone `A` subscribes
-to that blocklist by adding edge `A->L` with a weight of `0.1`.
 
 ## License
 
