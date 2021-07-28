@@ -28,12 +28,15 @@
     "ssb-ref": "^2.13.0"
   },
   "devDependencies": {
+    "mkdirp": "^1.0.4",
     "nyc": "^15.1.0",
     "promisify-tuple": "^1.2.0",
+    "rimraf": "^3.0.2",
     "scuttle-testbot": "^1.6.0",
     "secret-stack": "^6.4.0",
     "ssb-caps": "^1.1.0",
     "ssb-generate": "^1.0.1",
+    "ssb-keys": "^8.2.0",
     "ssb-tribes": "^0.4.1",
     "standard": "^16.0.2",
     "tap-spec": "^5.0.0",
