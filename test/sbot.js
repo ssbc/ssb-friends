@@ -121,8 +121,8 @@ tape('chill plugin order', t => {
 tape('silly config.friends.hops', async (t) => {
   const bot = u.Server({
     friends: {
-      hops: -1.5,
-    },
+      hops: -1.5
+    }
   })
 
   await run(bot.add)(u.follow(bot.createFeed().id))
