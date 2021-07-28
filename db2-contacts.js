@@ -4,28 +4,33 @@ const pl = require('pull-level')
 const Plugin = require('ssb-db2/indexes/plugin')
 const isFeed = require('ssb-ref').isFeed
 
-const bValue = Buffer.from('value')
-const bAuthor = Buffer.from('author')
-const bContent = Buffer.from('content')
-const bType = Buffer.from('type')
-const bContact = Buffer.from('contact')
+const B_VALUE = Buffer.from('value')
+const B_AUTHOR = Buffer.from('author')
+const B_CONTENT = Buffer.from('content')
+const B_TYPE = Buffer.from('type')
+const B_CONTACT = Buffer.from('contact')
 
-module.exports = function (createLayer) {
+// This index has the following key/values:
+//
+// sourceIdx => { [destIdx1]: edgeValue, [destIdx2]: edgeValue, ... }
+// "feeds" => [feedAIdx, feedBIdx, feedCIdx, ...]
+module.exports = function db2Contacts (createLayer) {
   return class Friends extends Plugin {
     constructor (log, dir) {
       super(log, dir, 'contacts', 2, undefined, 'json')
-      this.layer = createLayer('contacts')
-      this.layer({})
+      this.updateLayer = createLayer('contacts')
+      this.updateLayer({})
 
       // used for dictionary compression where a feed is mapped to its index
       this.feeds = []
 
-      // a map of feed -> { feed: followStatus }
-      this.feedValues = {}
-      // assuming we have feed A (index 0) and B, and A follows B we will in feedValues store:
-      // { 0: { 1: 1 } } meaning the map of values for feed A (0) is: index 1 (B) has value 1 (follow)
+      // a map of sourceIdx => { [destIdx1]: edgeValue, ... }
+      this.edges = {}
+      // assuming we have feed A (index 0) and B (index 1), and A follows B,
+      // then `this.edges` looks like `{ 0: { 1: 1 } }`, meaning that feed A (0)
+      // has an edge pointing to feed B (1) with value 1 (follow)
       //
-      // feeds will be: [A,B] in this example
+      // `this.feeds` will be: [A,B] in this example
 
       // it turns out that if you place the same key in a batch multiple
       // times. Level will happily write that key as many times as you give
@@ -43,25 +48,24 @@ module.exports = function (createLayer) {
       const recBuffer = record.value
       if (!recBuffer) return // deleted
 
-      let p = 0 // note you pass in p!
-      p = bipf.seekKey(recBuffer, p, bValue)
-      if (p < 0) return
+      const pValue = bipf.seekKey(recBuffer, 0, B_VALUE)
+      if (pValue < 0) return
 
-      const pAuthor = bipf.seekKey(recBuffer, p, bAuthor)
-      const author = bipf.decode(recBuffer, pAuthor)
+      const pAuthor = bipf.seekKey(recBuffer, pValue, B_AUTHOR)
+      const source = bipf.decode(recBuffer, pAuthor)
 
-      const pContent = bipf.seekKey(recBuffer, p, bContent)
+      const pContent = bipf.seekKey(recBuffer, pValue, B_CONTENT)
       if (pContent < 0) return
 
-      const pType = bipf.seekKey(recBuffer, pContent, bType)
+      const pType = bipf.seekKey(recBuffer, pContent, B_TYPE)
       if (pType < 0) return
 
-      if (bipf.compareString(recBuffer, pType, bContact) === 0) {
+      if (bipf.compareString(recBuffer, pType, B_CONTACT) === 0) {
         const content = bipf.decode(recBuffer, pContent)
-        const to = content.contact
+        const dest = content.contact
 
-        if (isFeed(author) && isFeed(to)) {
-          const value = content.blocking || content.flagged
+        if (isFeed(source) && isFeed(dest)) {
+          const edgeValue = content.blocking || content.flagged
             ? -1
             : content.following === true
               ? 1
@@ -69,40 +73,40 @@ module.exports = function (createLayer) {
 
           let updateFeeds = false
 
-          let fromIndex = this.feeds.indexOf(author)
-          if (fromIndex === -1) {
-            this.feeds.push(author)
-            fromIndex = this.feeds.length - 1
+          let sourceIdx = this.feeds.indexOf(source)
+          if (sourceIdx === -1) {
+            this.feeds.push(source)
+            sourceIdx = this.feeds.length - 1
             updateFeeds = true
           }
 
-          let toIndex = this.feeds.indexOf(to)
-          if (toIndex === -1) {
-            this.feeds.push(to)
-            toIndex = this.feeds.length - 1
+          let destIdx = this.feeds.indexOf(dest)
+          if (destIdx === -1) {
+            this.feeds.push(dest)
+            destIdx = this.feeds.length - 1
             updateFeeds = true
           }
 
-          const fromValues = this.feedValues[fromIndex] || {}
-          fromValues[toIndex] = value
-          this.feedValues[fromIndex] = fromValues
+          const sourceEdges = this.edges[sourceIdx] || {}
+          sourceEdges[destIdx] = edgeValue
+          this.edges[sourceIdx] = sourceEdges
 
-          const batchValue = {
+          const edgeEntry = {
             type: 'put',
-            key: fromIndex,
-            value: fromValues
+            key: sourceIdx,
+            value: sourceEdges
           }
 
-          const existingKeyIndex = this.batchKeys[fromIndex]
+          const existingKeyIndex = this.batchKeys[sourceIdx]
           if (existingKeyIndex) {
-            this.batch[existingKeyIndex] = batchValue
+            this.batch[existingKeyIndex] = edgeEntry
           } else {
-            this.batch.push(batchValue)
-            this.batchKeys[fromIndex] = this.batch.length - 1
+            this.batch.push(edgeEntry)
+            this.batchKeys[sourceIdx] = this.batch.length - 1
           }
 
           if (updateFeeds) {
-            const feedsValue = {
+            const feedsEntry = {
               type: 'put',
               key: 'feeds',
               value: this.feeds
@@ -110,14 +114,14 @@ module.exports = function (createLayer) {
 
             const existingFeedsIndex = this.batchKeys.feeds
             if (existingFeedsIndex) {
-              this.batch[existingFeedsIndex] = feedsValue
+              this.batch[existingFeedsIndex] = feedsEntry
             } else {
-              this.batch.push(feedsValue)
+              this.batch.push(feedsEntry)
               this.batchKeys.feeds = this.batch.length - 1
             }
           }
 
-          this.layer(author, to, value)
+          this.updateLayer(source, dest, edgeValue)
         }
       }
     }
@@ -128,40 +132,40 @@ module.exports = function (createLayer) {
           valueEncoding: this.valueEncoding,
           keys: true
         }),
-        pull.collect((err, data) => {
+        pull.collect((err, entries) => {
           if (err) return cb(err)
 
-          for (let i = 0; i < data.length; ++i) {
-            if (data[i].key === 'feeds') {
-              this.feeds = data[i].value
+          for (let i = 0; i < entries.length; ++i) {
+            if (entries[i].key === 'feeds') {
+              this.feeds = entries[i].value
               break
             }
           }
 
-          const result = {}
-          for (let i = 0; i < data.length; ++i) {
-            const relation = data[i]
+          const layer = {}
+          for (let i = 0; i < entries.length; ++i) {
+            const entry = entries[i]
 
-            if (relation.key !== '\x00' && relation.key !== 'feeds') {
-              const feedIndex = parseInt(relation.key, 10)
-              const feed = this.feeds[feedIndex]
-              const feedFollowStatus = result[feed] || {}
-              const feedIndexValues = this.feedValues[feedIndex] || {}
+            if (entry.key !== '\x00' && entry.key !== 'feeds') {
+              const sourceIdx = parseInt(entry.key, 10)
+              const source = this.feeds[sourceIdx]
+              const layerEdges = layer[source] || {}
+              const sourceEdges = this.edges[sourceIdx] || {}
 
-              const valueKeys = Object.keys(relation.value)
-              for (let v = 0; v < valueKeys.length; ++v) {
-                const toIndex = valueKeys[v]
-                const to = this.feeds[toIndex]
-                const value = parseInt(relation.value[valueKeys[v]], 10)
-                feedIndexValues[toIndex] = feedFollowStatus[to] = value
+              const destIdxs = Object.keys(entry.value)
+              for (let v = 0; v < destIdxs.length; ++v) {
+                const destIdx = destIdxs[v]
+                const dest = this.feeds[destIdx]
+                const edgeValue = parseInt(entry.value[destIdx], 10)
+                sourceEdges[destIdx] = layerEdges[dest] = edgeValue
               }
 
-              result[feed] = feedFollowStatus
-              this.feedValues[feedIndex] = feedIndexValues
+              layer[source] = layerEdges
+              this.edges[sourceIdx] = sourceEdges
             }
           }
 
-          this.layer(result)
+          this.updateLayer(layer)
           cb()
         })
       )
