@@ -2,7 +2,7 @@ const Reduce = require('flumeview-reduce')
 const isFeed = require('ssb-ref').isFeed
 // track contact messages, follow, unfollow, block
 
-module.exports = function (sbot, createLayer, config) {
+module.exports = function (sbot, createLayer) {
   const layer = createLayer('contacts')
   let initial = false
 
