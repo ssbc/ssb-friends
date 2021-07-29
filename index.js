@@ -44,16 +44,32 @@ exports.init = function (sbot, config) {
   }
 
   function isFollowing (opts, cb) {
+    const { source, dest, details } = opts
     onReady(() => {
       const g = layered.getGraph()
-      cb(null, g[opts.source] ? g[opts.source][opts.dest] >= 0 : false)
+      const response = g[source] ? g[source][dest] >= 0 : false
+      if (details) {
+        const g2 = layered.getGraph('contactsPrivate')
+        const privately = g2[source] ? g2[source][dest] >= 0 : false
+        cb(null, { response, private: privately })
+      } else {
+        cb(null, response)
+      }
     })
   }
 
   function isBlocking (opts, cb) {
+    const { source, dest, details } = opts
     onReady(() => {
       const g = layered.getGraph()
-      cb(null, Math.round(g[opts.source] && g[opts.source][opts.dest]) === -1)
+      const response = Math.round(g[source] && g[source][dest]) === -1
+      if (details) {
+        const g2 = layered.getGraph('contactsPrivate')
+        const privately = Math.round(g2[source] && g2[source][dest]) === -1
+        cb(null, { response, private: privately })
+      } else {
+        cb(null, response)
+      }
     })
   }
 
