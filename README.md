@@ -80,15 +80,23 @@ publish this contact message privately to some feeds / groups (see e.g.
 
 ### `ssb.friends.isFollowing(opts, cb)` ("async" muxrpc API)
 
-Calls back `true` if `opts.source` follows `opts.dest`, `false` otherwise.
-
+Calls back `true` if `opts.source` follows `opts.dest`, `false` otherwise, where
 `opts.source` and `opts.dest` are strings of SSB Feed IDs.
+
+If you pass `opts.details = true`, then the callback will respond with the
+object `{ response, private }`, where `response` is the boolean indicating
+the follow relationship, and `private` is a boolean indicating that the
+relationship was originally encoded in a private (encrypted) message.
 
 ### `ssb.friends.isBlocking({source, dest}, cb)` ("async" muxrpc API)
 
-Calls back `true` if `opts.source` blocks `opts.dest`, `false` otherwise.
-
+Calls back `true` if `opts.source` blocks `opts.dest`, `false` otherwise, where
 `opts.source` and `opts.dest` are strings of SSB Feed IDs.
+
+If you pass `opts.details = true`, then the callback will respond with the
+object `{ response, private }`, where `response` is the boolean indicating
+the block relationship, and `private` is a boolean indicating that the
+relationship was originally encoded in a private (encrypted) message.
 
 ### `ssb.friends.hops([opts,] cb)` ("async" muxrpc API)
 

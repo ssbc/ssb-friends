@@ -10,8 +10,8 @@ const mkdirp = require('mkdirp')
 
 const dir = path.join(os.tmpdir(), 'friends-db2')
 
-function Server(opts = {}) {
-  const stack = SecretStack({caps})
+function Server (opts = {}) {
+  const stack = SecretStack({ caps })
     .use(require('ssb-db2'))
     .use(require('ssb-db2/compat'))
     .use(require('..'))
@@ -19,16 +19,18 @@ function Server(opts = {}) {
   return stack(opts)
 }
 
+const aliceKeys = ssbKeys.generate()
+
 tape('follow() and isFollowing() privately in ssb-db2', async (t) => {
   rimraf.sync(dir)
   mkdirp.sync(dir)
   const sbot = Server({
-    keys: ssbKeys.generate(),
+    keys: aliceKeys,
     db2: true,
     friends: {
-      hookAuth: false,
+      hookAuth: false
     },
-    path: dir,
+    path: dir
   })
 
   const source = sbot.id
@@ -36,23 +38,64 @@ tape('follow() and isFollowing() privately in ssb-db2', async (t) => {
 
   const [err1, response1] = await run(sbot.friends.isFollowing)({
     source,
-    dest,
+    dest
   })
   t.error(err1, 'no error')
   t.false(response1, 'not following')
 
   const [err2, msg2] = await run(sbot.friends.follow)(dest, {
-    recps: [source],
+    recps: [source]
   })
   t.error(err2, 'no error')
   t.match(msg2.value.content, /box$/, 'publishes a private follow')
 
   const [err3, response3] = await run(sbot.friends.isFollowing)({
     source,
-    dest,
+    dest
   })
   t.error(err3, 'no error')
   t.true(response3, 'following')
+
+  const [err4, details4] = await run(sbot.friends.isFollowing)({
+    source,
+    dest,
+    details: true
+  })
+  t.error(err4, 'no error')
+  t.deepEqual(
+    details4,
+    { response: true, private: true },
+    'following with details'
+  )
+
+  await run(sbot.close)()
+  t.end()
+})
+
+tape('isFollowing() still works after sbot restarts', async (t) => {
+  const sbot = Server({
+    keys: aliceKeys,
+    db2: true,
+    friends: {
+      hookAuth: false
+    },
+    path: dir
+  })
+
+  const source = sbot.id
+  const dest = '@th3J6gjmDOBt77SRX1EFFWY0aH2Wagn21iUZViZFFxk=.ed25519'
+
+  const [err4, details4] = await run(sbot.friends.isFollowing)({
+    source,
+    dest,
+    details: true
+  })
+  t.error(err4, 'no error')
+  t.deepEqual(
+    details4,
+    { response: true, private: true },
+    'following with details'
+  )
 
   await run(sbot.close)()
   t.end()
@@ -65,9 +108,9 @@ tape('block() and isBlocking() privately in ssb-db2', async (t) => {
     keys: ssbKeys.generate(),
     db2: true,
     friends: {
-      hookAuth: false,
+      hookAuth: false
     },
-    path: dir,
+    path: dir
   })
 
   const source = sbot.id
@@ -75,23 +118,35 @@ tape('block() and isBlocking() privately in ssb-db2', async (t) => {
 
   const [err1, response1] = await run(sbot.friends.isBlocking)({
     source,
-    dest,
+    dest
   })
   t.error(err1, 'no error')
   t.false(response1, 'not blocking')
 
   const [err2, msg2] = await run(sbot.friends.block)(dest, {
-    recps: [source],
+    recps: [source]
   })
   t.error(err2, 'no error')
   t.match(msg2.value.content, /box$/, 'publishes a private block')
 
   const [err3, response3] = await run(sbot.friends.isBlocking)({
     source,
-    dest,
+    dest
   })
   t.error(err3, 'no error')
   t.true(response3, 'blocking')
+
+  const [err4, details4] = await run(sbot.friends.isBlocking)({
+    source,
+    dest,
+    details: true
+  })
+  t.error(err4, 'no error')
+  t.deepEqual(
+    details4,
+    { response: true, private: true },
+    'blocking with details'
+  )
 
   await run(sbot.close)()
   t.end()

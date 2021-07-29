@@ -5,6 +5,8 @@ const Plugin = require('ssb-db2/indexes/plugin')
 const isFeed = require('ssb-ref').isFeed
 
 const B_VALUE = Buffer.from('value')
+const B_META = Buffer.from('meta')
+const B_PRIVATE = Buffer.from('private')
 const B_AUTHOR = Buffer.from('author')
 const B_CONTENT = Buffer.from('content')
 const B_TYPE = Buffer.from('type')
@@ -14,12 +16,18 @@ const B_CONTACT = Buffer.from('contact')
 //
 // sourceIdx => { [destIdx1]: edgeValue, [destIdx2]: edgeValue, ... }
 // "feeds" => [feedAIdx, feedBIdx, feedCIdx, ...]
+//
+// If the edge is private (from an encrypted contact msg), then the `edgeValue`
+// is a string prefixed with "p", e.g. a private block is the string `"p-1"`,
+// while a public block is just `"-1"`
 module.exports = function db2Contacts (createLayer) {
   return class Friends extends Plugin {
     constructor (log, dir) {
-      super(log, dir, 'contacts', 2, undefined, 'json')
-      this.updateLayer = createLayer('contacts')
-      this.updateLayer({})
+      super(log, dir, 'contacts', 3, undefined, 'json')
+      this.updatePublicLayer = createLayer('contactsPublic')
+      this.updatePublicLayer({})
+      this.updatePrivateLayer = createLayer('contactsPrivate')
+      this.updatePrivateLayer({})
 
       // used for dictionary compression where a feed is mapped to its index
       this.feeds = []
@@ -44,6 +52,15 @@ module.exports = function db2Contacts (createLayer) {
       cb()
     }
 
+    isPrivateRecord (recBuffer) {
+      const pMeta = bipf.seekKey(recBuffer, 0, B_META)
+      if (pMeta < 0) return false
+      const pPrivate = bipf.seekKey(recBuffer, pMeta, B_PRIVATE)
+      if (pPrivate < 0) return false
+      const isPrivate = bipf.decode(recBuffer, pPrivate)
+      return isPrivate
+    }
+
     processRecord (record, seq) {
       const recBuffer = record.value
       if (!recBuffer) return // deleted
@@ -63,6 +80,7 @@ module.exports = function db2Contacts (createLayer) {
       if (bipf.compareString(recBuffer, pType, B_CONTACT) === 0) {
         const content = bipf.decode(recBuffer, pContent)
         const dest = content.contact
+        const privately = this.isPrivateRecord(recBuffer)
 
         if (isFeed(source) && isFeed(dest)) {
           const edgeValue = content.blocking || content.flagged
@@ -88,7 +106,11 @@ module.exports = function db2Contacts (createLayer) {
           }
 
           const sourceEdges = this.edges[sourceIdx] || {}
-          sourceEdges[destIdx] = edgeValue
+          if (privately) {
+            sourceEdges[destIdx] = 'p' + edgeValue
+          } else {
+            sourceEdges[destIdx] = edgeValue
+          }
           this.edges[sourceIdx] = sourceEdges
 
           const edgeEntry = {
@@ -121,7 +143,11 @@ module.exports = function db2Contacts (createLayer) {
             }
           }
 
-          this.updateLayer(source, dest, edgeValue)
+          if (privately) {
+            this.updatePrivateLayer(source, dest, edgeValue)
+          } else {
+            this.updatePublicLayer(source, dest, edgeValue)
+          }
         }
       }
     }
@@ -142,30 +168,43 @@ module.exports = function db2Contacts (createLayer) {
             }
           }
 
-          const layer = {}
+          const publicLayer = {}
+          const privateLayer = {}
           for (let i = 0; i < entries.length; ++i) {
             const entry = entries[i]
 
             if (entry.key !== '\x00' && entry.key !== 'feeds') {
               const sourceIdx = parseInt(entry.key, 10)
               const source = this.feeds[sourceIdx]
-              const layerEdges = layer[source] || {}
+              const publicLayerEdges = publicLayer[source] || {}
+              const privateLayerEdges = privateLayer[source] || {}
               const sourceEdges = this.edges[sourceIdx] || {}
 
               const destIdxs = Object.keys(entry.value)
               for (let v = 0; v < destIdxs.length; ++v) {
                 const destIdx = destIdxs[v]
                 const dest = this.feeds[destIdx]
-                const edgeValue = parseInt(entry.value[destIdx], 10)
-                sourceEdges[destIdx] = layerEdges[dest] = edgeValue
+                const rawEdgeValue = entry.value[destIdx]
+                const privately = rawEdgeValue[0] === 'p'
+                const edgeValue = privately
+                  ? parseInt(rawEdgeValue.slice(1), 10)
+                  : parseInt(rawEdgeValue, 10)
+                if (privately) {
+                  privateLayerEdges[dest] = edgeValue
+                } else {
+                  publicLayerEdges[dest] = edgeValue
+                }
+                sourceEdges[destIdx] = rawEdgeValue
               }
 
-              layer[source] = layerEdges
+              publicLayer[source] = publicLayerEdges
+              privateLayer[source] = privateLayerEdges
               this.edges[sourceIdx] = sourceEdges
             }
           }
 
-          this.updateLayer(layer)
+          this.updatePublicLayer(publicLayer)
+          this.updatePrivateLayer(privateLayer)
           cb()
         })
       )

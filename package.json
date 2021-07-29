@@ -35,6 +35,7 @@
     "scuttle-testbot": "^1.6.0",
     "secret-stack": "^6.4.0",
     "ssb-caps": "^1.1.0",
+    "ssb-db": "19",
     "ssb-generate": "^1.0.1",
     "ssb-keys": "^8.2.0",
     "ssb-tribes": "^0.4.1",
