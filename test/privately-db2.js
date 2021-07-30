@@ -38,10 +38,11 @@ tape('follow() and isFollowing() privately in ssb-db2', async (t) => {
 
   const [err1, response1] = await run(sbot.friends.isFollowing)({
     source,
-    dest
+    dest,
+    details: true
   })
   t.error(err1, 'no error')
-  t.false(response1, 'not following')
+  t.deepEqual(response1, { response: false, private: false }, 'not following')
 
   const [err2, msg2] = await run(sbot.friends.follow)(dest, {
     recps: [source]
@@ -118,10 +119,11 @@ tape('block() and isBlocking() privately in ssb-db2', async (t) => {
 
   const [err1, response1] = await run(sbot.friends.isBlocking)({
     source,
-    dest
+    dest,
+    details: true
   })
   t.error(err1, 'no error')
-  t.false(response1, 'not blocking')
+  t.deepEqual(response1, { response: false, private: false }, 'not blocking')
 
   const [err2, msg2] = await run(sbot.friends.block)(dest, {
     recps: [source]
