@@ -24,10 +24,11 @@
     "pull-notify": "^0.1.1",
     "pull-pushable": "^2.2.0",
     "pull-stream": "^3.6.0",
-    "ssb-db2": "^2.1.0",
+    "ssb-db2": "^3.0.0",
     "ssb-ref": "^2.13.0"
   },
   "devDependencies": {
+    "envelope-spec": "1.0.0",
     "mkdirp": "^1.0.4",
     "nyc": "^15.1.0",
     "promisify-tuple": "^1.2.0",
