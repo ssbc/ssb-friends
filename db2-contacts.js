@@ -4,7 +4,6 @@ const pl = require('pull-level')
 const Plugin = require('ssb-db2/indexes/plugin')
 const isFeed = require('ssb-ref').isFeed
 
-const B_VALUE = Buffer.from('value')
 const B_META = Buffer.from('meta')
 const B_PRIVATE = Buffer.from('private')
 const B_AUTHOR = Buffer.from('author')
@@ -61,12 +60,9 @@ module.exports = function db2Contacts (createLayer) {
       return isPrivate
     }
 
-    processRecord (record, seq) {
+    processRecord (record, seq, pValue) {
       const recBuffer = record.value
       if (!recBuffer) return // deleted
-
-      const pValue = bipf.seekKey(recBuffer, 0, B_VALUE)
-      if (pValue < 0) return
 
       const pAuthor = bipf.seekKey(recBuffer, pValue, B_AUTHOR)
       const source = bipf.decode(recBuffer, pAuthor)
