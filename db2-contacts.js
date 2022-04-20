@@ -64,9 +64,6 @@ module.exports = function db2Contacts (createLayer) {
       const recBuffer = record.value
       if (!recBuffer) return // deleted
 
-      const pAuthor = bipf.seekKey(recBuffer, pValue, B_AUTHOR)
-      const source = bipf.decode(recBuffer, pAuthor)
-
       const pContent = bipf.seekKey(recBuffer, pValue, B_CONTENT)
       if (pContent < 0) return
 
@@ -74,6 +71,8 @@ module.exports = function db2Contacts (createLayer) {
       if (pType < 0) return
 
       if (bipf.compareString(recBuffer, pType, B_CONTACT) === 0) {
+        const pAuthor = bipf.seekKey(recBuffer, pValue, B_AUTHOR)
+        const source = bipf.decode(recBuffer, pAuthor)
         const content = bipf.decode(recBuffer, pContent)
         const dest = content.contact
         const privately = this.isPrivateRecord(recBuffer)
