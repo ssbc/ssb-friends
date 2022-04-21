@@ -30,6 +30,8 @@ module.exports = function db2Contacts (createLayer) {
 
       // used for dictionary compression where a feed is mapped to its index
       this.feeds = []
+      // mapping from feed -> index in feeds array
+      this.feedsIndex = {}
 
       // a map of sourceIdx => { [destIdx1]: edgeValue, ... }
       this.edges = {}
@@ -64,9 +66,6 @@ module.exports = function db2Contacts (createLayer) {
       const recBuffer = record.value
       if (!recBuffer) return // deleted
 
-      const pAuthor = bipf.seekKey(recBuffer, pValue, B_AUTHOR)
-      const source = bipf.decode(recBuffer, pAuthor)
-
       const pContent = bipf.seekKey(recBuffer, pValue, B_CONTENT)
       if (pContent < 0) return
 
@@ -74,11 +73,14 @@ module.exports = function db2Contacts (createLayer) {
       if (pType < 0) return
 
       if (bipf.compareString(recBuffer, pType, B_CONTACT) === 0) {
+        const pAuthor = bipf.seekKey(recBuffer, pValue, B_AUTHOR)
+        const source = bipf.decode(recBuffer, pAuthor)
         const content = bipf.decode(recBuffer, pContent)
         const dest = content.contact
-        const privately = this.isPrivateRecord(recBuffer)
 
         if (isFeed(source) && isFeed(dest)) {
+          const privately = this.isPrivateRecord(recBuffer)
+
           const edgeValue = content.blocking || content.flagged
             ? -1
             : content.following === true
@@ -87,17 +89,19 @@ module.exports = function db2Contacts (createLayer) {
 
           let updateFeeds = false
 
-          let sourceIdx = this.feeds.indexOf(source)
-          if (sourceIdx === -1) {
+          let sourceIdx = this.feedsIndex[source]
+          if (sourceIdx === undefined) {
             this.feeds.push(source)
             sourceIdx = this.feeds.length - 1
+            this.feedsIndex[source] = sourceIdx
             updateFeeds = true
           }
 
-          let destIdx = this.feeds.indexOf(dest)
-          if (destIdx === -1) {
+          let destIdx = this.feedsIndex[dest]
+          if (destIdx === undefined) {
             this.feeds.push(dest)
             destIdx = this.feeds.length - 1
+            this.feedsIndex[dest] = destIdx
             updateFeeds = true
           }
 
@@ -160,6 +164,10 @@ module.exports = function db2Contacts (createLayer) {
           for (let i = 0; i < entries.length; ++i) {
             if (entries[i].key === 'feeds') {
               this.feeds = entries[i].value
+              for (var fIdx = 0; fIdx < this.feeds.length; ++fIdx) {
+                const feed = this.feeds[fIdx]
+                this.feedsIndex[feed] = fIdx
+              }
               break
             }
           }
