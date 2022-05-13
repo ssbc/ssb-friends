@@ -4,11 +4,12 @@ const pl = require('pull-level')
 const Plugin = require('ssb-db2/indexes/plugin')
 const isFeed = require('ssb-ref').isFeed
 
-const B_META = Buffer.from('meta')
-const B_PRIVATE = Buffer.from('private')
-const B_AUTHOR = Buffer.from('author')
-const B_CONTENT = Buffer.from('content')
-const B_TYPE = Buffer.from('type')
+const BIPF_META = bipf.allocAndEncode('meta')
+const BIPF_PRIVATE = bipf.allocAndEncode('private')
+const BIPF_AUTHOR = bipf.allocAndEncode('author')
+const BIPF_CONTENT = bipf.allocAndEncode('content')
+const BIPF_TYPE = bipf.allocAndEncode('type')
+
 const B_CONTACT = Buffer.from('contact')
 
 // This index has the following key/values:
@@ -54,9 +55,9 @@ module.exports = function db2Contacts (createLayer) {
     }
 
     isPrivateRecord (recBuffer) {
-      const pMeta = bipf.seekKey(recBuffer, 0, B_META)
+      const pMeta = bipf.seekKey2(recBuffer, 0, BIPF_META, 0)
       if (pMeta < 0) return false
-      const pPrivate = bipf.seekKey(recBuffer, pMeta, B_PRIVATE)
+      const pPrivate = bipf.seekKey2(recBuffer, pMeta, BIPF_PRIVATE, 0)
       if (pPrivate < 0) return false
       const isPrivate = bipf.decode(recBuffer, pPrivate)
       return isPrivate
@@ -66,14 +67,14 @@ module.exports = function db2Contacts (createLayer) {
       const recBuffer = record.value
       if (!recBuffer) return // deleted
 
-      const pContent = bipf.seekKey(recBuffer, pValue, B_CONTENT)
+      const pContent = bipf.seekKey2(recBuffer, pValue, BIPF_CONTENT, 0)
       if (pContent < 0) return
 
-      const pType = bipf.seekKey(recBuffer, pContent, B_TYPE)
+      const pType = bipf.seekKey2(recBuffer, pContent, BIPF_TYPE, 0)
       if (pType < 0) return
 
       if (bipf.compareString(recBuffer, pType, B_CONTACT) === 0) {
-        const pAuthor = bipf.seekKey(recBuffer, pValue, B_AUTHOR)
+        const pAuthor = bipf.seekKey2(recBuffer, pValue, BIPF_AUTHOR, 0)
         const source = bipf.decode(recBuffer, pAuthor)
         const content = bipf.decode(recBuffer, pContent)
         const dest = content.contact
