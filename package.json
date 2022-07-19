@@ -24,7 +24,7 @@
     "pull-notify": "^0.1.1",
     "pull-pushable": "^2.2.0",
     "pull-stream": "^3.6.0",
-    "ssb-db2": ">=3.4.1 <=4",
+    "ssb-db2": ">=4.1.0",
     "ssb-ref": "^2.13.0"
   },
   "devDependencies": {
