@@ -54,6 +54,15 @@ module.exports = function db2Contacts (createLayer) {
       cb()
     }
 
+    reset() {
+      this.updatePublicLayer({})
+      this.updatePrivateLayer({})
+      this.feeds = []
+      this.feedsIndex = {}
+      this.edges = {}
+      this.batchKeys = {}
+    }
+
     isPrivateRecord (recBuffer) {
       const pMeta = bipf.seekKey2(recBuffer, 0, BIPF_META, 0)
       if (pMeta < 0) return false
