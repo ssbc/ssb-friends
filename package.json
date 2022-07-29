@@ -24,7 +24,7 @@
     "pull-notify": "^0.1.1",
     "pull-pushable": "^2.2.0",
     "pull-stream": "^3.6.0",
-    "ssb-db2": ">=4.1.0",
+    "ssb-db2": ">=4.1.0 <=5",
     "ssb-ref": "^2.13.0"
   },
   "devDependencies": {
@@ -41,11 +41,11 @@
     "ssb-keys": "^8.2.0",
     "ssb-tribes": "^0.4.1",
     "standard": "^16.0.2",
-    "tap-spec": "^5.0.0",
+    "tap-arc": "^0.3.5",
     "tape": "^5.2.2"
   },
   "scripts": {
-    "test": "tape test/*.js | tap-spec",
+    "test": "tape test/*.js | tap-arc --bail",
     "lint": "standard --fix",
     "coverage": "nyc npm run test"
   }
