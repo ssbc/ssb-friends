@@ -20,7 +20,7 @@ const B_CONTACT = Buffer.from('contact')
 // If the edge is private (from an encrypted contact msg), then the `edgeValue`
 // is a string prefixed with "p", e.g. a private block is the string `"p-1"`,
 // while a public block is just `"-1"`
-module.exports = function db2Contacts (createLayer) {
+module.exports = function db2Contacts (createLayer, resetLayers) {
   return class Friends extends Plugin {
     constructor (log, dir) {
       super(log, dir, 'contacts', 3, undefined, 'json')
@@ -55,7 +55,10 @@ module.exports = function db2Contacts (createLayer) {
     }
 
     reset() {
+      resetLayers()
+      this.updatePublicLayer = createLayer('contactsPublic')
       this.updatePublicLayer({})
+      this.updatePrivateLayer = createLayer('contactsPrivate')
       this.updatePrivateLayer({})
       this.feeds = []
       this.feedsIndex = {}

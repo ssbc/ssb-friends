@@ -28,7 +28,7 @@ exports.init = function (sbot, config) {
   const layered = LayeredGraph({ max, start: sbot.id })
 
   if (sbot.db) {
-    sbot.db.registerIndex(db2Contacts(layered.createLayer))
+    sbot.db.registerIndex(db2Contacts(layered.createLayer, layered.reset))
   } else {
     contacts(sbot, layered.createLayer)
   }
