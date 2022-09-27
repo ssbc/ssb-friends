@@ -1,13 +1,13 @@
 {
-  "name": "ssb-friends",
+  "name": "mu-friends",
   "description": "Calculates the SSB social graph and provides APIs to query it",
   "version": "5.1.7",
   "author": "'Dominic Tarr' <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT",
-  "homepage": "https://github.com/ssbc/ssb-friends",
+  "homepage": "https://github.com/Mu-Methods/mu-friends",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ssbc/ssb-friends.git"
+    "url": "git://github.com/Mu-Methods/mu-friends.git"
   },
   "main": "index.js",
   "engines": {
@@ -24,8 +24,13 @@
     "pull-notify": "^0.1.1",
     "pull-pushable": "^2.2.0",
     "pull-stream": "^3.6.0",
+<<<<<<< Updated upstream
     "ssb-db2": ">=4.1.0 <=6",
     "ssb-ref": "^2.13.0"
+=======
+    "mu-db2": "1.0.0",
+    "mu-ref": "1.0.0"
+>>>>>>> Stashed changes
   },
   "devDependencies": {
     "envelope-spec": "1.0.0",
@@ -35,12 +40,20 @@
     "rimraf": "^3.0.2",
     "scuttle-testbot": "^1.6.0",
     "secret-stack": "^6.4.0",
+<<<<<<< Updated upstream
     "ssb-caps": "^1.1.0",
     "ssb-db": "19",
     "ssb-db2": "^6.1.0",
     "ssb-generate": "^1.0.1",
     "ssb-keys": "^8.2.0",
     "ssb-tribes": "^0.4.1",
+=======
+    "mu-caps": "1.1.0",
+    "mu-db": "1.0.0",
+    "mu-generate": "1.0.0",
+    "mu-keys": "1.0.0",
+    "mu-tribes": "1.0.0",
+>>>>>>> Stashed changes
     "standard": "^16.0.2",
     "tap-arc": "^0.3.5",
     "tape": "^5.2.2"
