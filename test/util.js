@@ -2,12 +2,16 @@ const ref = require('ssb-ref')
 const Server = require('scuttle-testbot')
 
 exports.Server = function Testbot (opts = {}) {
-  let stack = Server
+  const stack = Server
     .use(require('ssb-replicate'))
     .use(require('..'))
 
-  if (opts.tribes === true)
-    stack = stack.use(require('ssb-tribes'))
+  if (opts.tribes === true) {
+    stack
+      .use(require('ssb-backlinks'))
+      .use(require('ssb-query'))
+      .use(require('ssb-tribes'))
+  }
 
   return stack(opts)
 }
