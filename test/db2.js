@@ -2,13 +2,11 @@ const tape = require('tape')
 const os = require('os')
 const path = require('path')
 const ssbKeys = require('ssb-keys')
-const run = require('promisify-tuple')
+const { promisify: p } = require('util')
 const pull = require('pull-stream')
 const validate = require('ssb-validate')
 const rimraf = require('rimraf')
 const mkdirp = require('mkdirp')
-const SecretStack = require('secret-stack')
-const caps = require('ssb-caps')
 const u = require('./util')
 
 function liveFriends (ssbServer) {
@@ -25,26 +23,20 @@ function liveFriends (ssbServer) {
 
 const dir = path.join(os.tmpdir(), 'friends-db2')
 
-rimraf.sync(dir)
-mkdirp.sync(dir)
-
 function Server(opts = {}) {
-  const stack = SecretStack({ caps })
-    .use(require('ssb-db2'))
-    .use(require('..'))
-
-  return stack(opts)
+  return u.Server({
+    db1: false,
+    ...opts
+  })
 }
 
 let state = validate.initial()
 
 function addMsg(db, keys, content) {
   state = validate.appendNew(state, null, keys, content, Date.now())
+  const value = state.queue.shift().value
 
-  return run((cb) => {
-    value = state.queue.shift().value
-    db.add(value, cb)
-  })()
+  return p(db.add)(value)
 }
 
 tape('db2 friends test', async (t) => {
@@ -54,7 +46,6 @@ tape('db2 friends test', async (t) => {
 
   let sbot = Server({
     keys: alice,
-    db2: true,
     friends: {
       hookAuth: false,
       hookReplicate: false
@@ -76,15 +67,19 @@ tape('db2 friends test', async (t) => {
     }),
     addMsg(sbot.db, carol, u.follow(alice.id))
   ])
+    .then(() => t.pass('add follow messages'))
 
-  const [err, hops] = await run(sbot.friends.hops)()
-  t.error(err)
-  t.deepEqual(live, hops)
+  const hops = await p(sbot.friends.hops)()
+    .catch(t.error)
+  t.deepEqual(live, hops, 'live hops good')
 
-  await run(sbot.close)()
+
+  await p(sbot.close)()
+    .catch(t.error)
+
   sbot = Server({
+    rimraf: false,
     keys: alice,
-    db2: true,
     friends: {
       hookAuth: false,
       hookReplicate: false
@@ -93,13 +88,16 @@ tape('db2 friends test', async (t) => {
   })
   live = liveFriends(sbot)
 
-  const [err2] = await addMsg(sbot.db, bob, u.follow(carol.id))
-  t.error(err2)
+  await p(setTimeout)(1000)
 
-  await run(sbot.db.onDrain)('contacts')
-  t.deepEqual(live, hops)
+  await addMsg(sbot.db, bob, u.follow(carol.id))
+    .catch(err => t.error(err, 'bob follows carol'))
 
-  await run(sbot.close)()
+  await p(sbot.db.onDrain)('contacts')
+    .catch(err => t.error(err, 'onDrain contacts'))
+  t.deepEqual(live, hops, 'live hops still good')
+
+  await p(sbot.close)()
   t.end()
 })
 
@@ -113,7 +111,6 @@ tape('db2 unfollow', async (t) => {
 
   let sbot = Server({
     keys: alice,
-    db2: true,
     friends: {
       hookAuth: false,
       hookReplicate: false
@@ -128,13 +125,15 @@ tape('db2 unfollow', async (t) => {
     addMsg(sbot.db, bob, u.follow(alice.id)),
     addMsg(sbot.db, carol, u.follow(alice.id))
   ])
+    .catch(t.error)
 
-  const [err, hops] = await run(sbot.friends.hops)()
-  t.error(err)
+  const hops = await p(sbot.friends.hops)()
+    .catch(t.error)
   t.deepEqual(live, hops)
 
-  await run(sbot.close)()
+  await p(sbot.close)()
   sbot = Server({
+    rimraf: false,
     keys: alice,
     db2: true,
     friends: {
@@ -145,15 +144,16 @@ tape('db2 unfollow', async (t) => {
   })
   live = liveFriends(sbot)
 
-  const [err2] = await addMsg(sbot.db, alice, u.unfollow(bob.id))
-  t.error(err2)
+  await addMsg(sbot.db, alice, u.unfollow(bob.id))
+    .catch(t.error)
 
-  const [err3, hops3] = await run(sbot.friends.hops)()
-  t.error(err3)
+  const hops3 = await p(sbot.friends.hops)()
+    .catch(t.error)
   t.deepEqual(live, hops3)
 
-  await run(sbot.close)()
+  await p(sbot.close)()
   sbot = Server({
+    rimraf: false,
     keys: alice,
     db2: true,
     friends: {
@@ -163,10 +163,10 @@ tape('db2 unfollow', async (t) => {
     path: dir
   })
 
-  const [err4, hopsAfter] = await run(sbot.friends.hops)()
-  t.error(err4)
+  const hopsAfter = await p(sbot.friends.hops)()
+    .catch(t.error)
   t.deepEqual(hopsAfter, hops3)
 
-  await run(sbot.close)()
+  await p(sbot.close)()
   t.end()
 })

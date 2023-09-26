@@ -29,6 +29,7 @@ tape('listen to hopStream and requests replication of follows', (t) => {
     })
     .use(require('..'))
     .call(null, {
+      db1: true,
       friends: {
         hops: 2
       }
@@ -77,6 +78,7 @@ tape('listen to hopStream and stops replication of blocks', (t) => {
     })
     .use(require('..'))
     .call(null, {
+      db1: true,
       friends: {
         hops: 2
       }
