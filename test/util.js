@@ -2,18 +2,29 @@ const ref = require('ssb-ref')
 const Server = require('scuttle-testbot')
 
 exports.Server = function Testbot (opts = {}) {
-  const stack = Server
-    .use(require('ssb-replicate'))
-    .use(require('..'))
+  if (opts.db1 === undefined) opts.db1 = true
 
-  if (opts.tribes === true) {
-    stack
-      .use(require('ssb-backlinks'))
-      .use(require('ssb-query'))
-      .use(require('ssb-tribes'))
+  const stack = Server
+
+  if (opts.db1) {
+    stack.use(require('ssb-replicate'))
+
+    if (opts.tribes === true) {
+      stack
+        .use(require('ssb-backlinks'))
+        .use(require('ssb-query'))
+        .use(require('ssb-tribes'))
+    }
+  } else {
+    stack.use(require('ssb-db2/compat/ebt'))
   }
 
-  return stack(opts)
+  stack.use(require('..'))
+
+  return stack({
+    db1: true,
+    ...opts
+  })
 }
 
 exports.follow = function (id) {

@@ -40,7 +40,7 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
     contact: feedB.id,
     following: true
   })
-  t.deepEqual(changes, [ { id: botA.id, hops: 0 } ])
+  t.deepEqual(changes, [{ id: botA.id, hops: 0 }])
   changes.length = 0
 
   // feedB -> feedC

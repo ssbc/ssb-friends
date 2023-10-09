@@ -9,12 +9,12 @@ const blockedKeys = ssbKeys.generate()
 tape('listen to hopStream and requests replication of follows', (t) => {
   t.pass('followed feed is ' + followedKeys.id)
 
-  const sbot = Server
+  const stack = Server
     .use({
       name: 'replicate',
-      init() {
+      init () {
         return {
-          request(feed, bool) {
+          request (feed, bool) {
             if (feed === sbot.id) return
             t.equals(feed, followedKeys.id, 'requested feed id matches')
             t.true(bool, 'bool is true')
@@ -23,16 +23,18 @@ tape('listen to hopStream and requests replication of follows', (t) => {
               t.end()
             })
           },
-          block() { }
+          block () { }
         }
       }
     })
     .use(require('..'))
-    .call(null, {
-      friends: {
-        hops: 2
-      }
-    })
+
+  const sbot = stack({
+    db1: true,
+    friends: {
+      hops: 2
+    }
+  })
 
   sbot.friends.follow(followedKeys.id, {}, (err, msg) => {
     t.error(err, 'no error when following')
@@ -48,13 +50,13 @@ tape('listen to hopStream and stops replication of blocks', (t) => {
     [blockedKeys.id, false]
   ]
 
-  const sbot = Server
+  const stack = Server
     .use({
       name: 'replicate',
-      init() {
+      init () {
         return {
-          request() {},
-          block(orig, dest, bool) {
+          request () {},
+          block (orig, dest, bool) {
             t.true(expected.length > 0, 'expected')
             const [expectedDest, expectedBool] = expected.shift()
             t.equals(orig, sbot.id, 'self feed id')
@@ -76,11 +78,13 @@ tape('listen to hopStream and stops replication of blocks', (t) => {
       }
     })
     .use(require('..'))
-    .call(null, {
-      friends: {
-        hops: 2
-      }
-    })
+
+  const sbot = stack({
+    db1: true,
+    friends: {
+      hops: 2
+    }
+  })
 
   sbot.friends.block(blockedKeys.id, {}, (err, msg) => {
     t.error(err, 'no error when blocking')

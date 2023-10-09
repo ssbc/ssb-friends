@@ -31,7 +31,7 @@ exports.init = function (sbot, config) {
   if (!config.friends) config.friends = {}
   if (!config.replicate) config.replicate = {}
   const max = config.friends.hops || config.replicate.hops || 3
-  const layered = LayeredGraph({ max: max, start: sbot.id })
+  const layered = LayeredGraph({ max, start: sbot.id })
 
   if (sbot.db) {
     sbot.db.registerIndex(db2Contacts(layered.createLayer))
@@ -102,25 +102,25 @@ exports.init = function (sbot, config) {
   }
 
   // glue modules together
-  if (config.friends.hookAuth !== false) // defaults to true
-    authGlue(sbot, isBlocking)
+  if (config.friends.hookAuth !== false) authGlue(sbot, isBlocking)
+  // defaults to true
 
-  if (config.friends.hookReplicate !== false) // defaults to true
-    replicationGlue(sbot, layered, legacy)
+  if (config.friends.hookReplicate !== false) replicationGlue(sbot, layered, legacy)
+  // defaults to true
 
   return {
     hopStream: layered.hopStream,
     onEdge: layered.onEdge,
-    follow: follow,
-    block: block,
-    isFollowing: isFollowing,
-    isBlocking: isBlocking,
+    follow,
+    block,
+    isFollowing,
+    isBlocking,
 
     // expose createLayer, so that other plugins may express relationships
     createLayer: layered.createLayer,
 
     // legacy, debugging
-    hops: hops,
+    hops,
     help: () => help,
     // legacy
     get: legacy.get,
