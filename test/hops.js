@@ -1,6 +1,6 @@
 const tape = require('tape')
 const pull = require('pull-stream')
-const run = require('promisify-tuple')
+const { promisify: p } = require('util')
 const u = require('./util')
 
 const botA = u.Server({
@@ -35,7 +35,7 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
   const feedC = botA.createFeed()
 
   // feedA -> feedB
-  await run(feedA.publish)({
+  await p(feedA.publish)({
     type: 'contact',
     contact: feedB.id,
     following: true
@@ -44,14 +44,14 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
   changes.length = 0
 
   // feedB -> feedC
-  await run(feedB.publish)({
+  await p(feedB.publish)({
     type: 'contact',
     contact: feedC.id,
     following: true
   })
 
   // follow feedA
-  await run(botA.publish)({
+  await p(botA.publish)({
     type: 'contact',
     contact: feedA.id,
     following: true
@@ -63,7 +63,7 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
   changes.length = 0
 
   // follow feedB
-  await run(botA.publish)({
+  await p(botA.publish)({
     type: 'contact',
     contact: feedB.id,
     following: true
@@ -73,8 +73,8 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
     { id: feedC.id, hops: 2 }
   ])
 
-  const [err, g] = await run(botA.friends.get)()
-  t.error(err)
+  const g = await p(botA.friends.get)()
+    .catch(t.error)
   t.deepEqual(g, {
     [feedA.id]: {
       [feedB.id]: true
@@ -86,28 +86,28 @@ tape('friends are re-emitted when distance changes `hops: 2`', async (t) => {
       [feedA.id]: true,
       [feedB.id]: true
     }
-  })
+  }, 'botA: correct hops graph')
 
-  const [err2, g2] = await run(botA.friends.get)({ source: botA.id })
-  t.error(err2)
+  const g2 = await p(botA.friends.get)({ source: botA.id })
+    .catch(t.error)
   t.deepEqual(g2, {
     [feedA.id]: true,
     [feedB.id]: true
-  })
+  }, 'botA: correct hops graph (from botA)')
 
-  const [err3, g3] = await run(botA.friends.get)({ dest: feedB.id })
-  t.error(err3)
+  const g3 = await p(botA.friends.get)({ dest: feedB.id })
+    .catch(t.error)
   t.deepEqual(g3, {
     [feedA.id]: true,
     [botA.id]: true
-  })
+  }, 'botA: correct hops graph (to feedB)')
 
-  const [err4, follows] = await run(botA.friends.get)({ source: botA.id, dest: feedB.id })
-  t.error(err4)
+  const follows = await p(botA.friends.get)({ source: botA.id, dest: feedB.id })
+    .catch(t.error)
   t.equal(follows, true)
 
-  const [err5, follows5] = await run(botA.friends.get)({ source: botA.id, dest: feedC.id })
-  t.error(err5)
+  const follows5 = await p(botA.friends.get)({ source: botA.id, dest: feedC.id })
+    .catch(t.error)
   t.notOk(follows5)
 
   t.end()
@@ -117,43 +117,43 @@ tape('legacy blocking / unblocking works', async (t) => {
   const feedD = botA.createFeed()
   const feedE = botA.createFeed()
 
-  await run(feedD.publish)({
+  await p(feedD.publish)({
     type: 'contact',
     contact: feedE.id,
     following: true
   })
 
-  const [err1, follows1] = await run(botA.friends.get)({
+  const follows1 = await p(botA.friends.get)({
     source: feedD.id,
     dest: feedE.id
   })
-  t.error(err1)
+    .catch(t.error)
   t.equal(follows1, true)
 
-  await run(feedD.publish)({
+  await p(feedD.publish)({
     type: 'contact',
     contact: feedE.id,
     blocking: true
   })
 
-  const [err2, follows2] = await run(botA.friends.get)({
+  const follows2 = await p(botA.friends.get)({
     source: feedD.id,
     dest: feedE.id
   })
-  t.error(err2)
+    .catch(t.error)
   t.notOk(follows2)
 
-  await run(feedD.publish)({
+  await p(feedD.publish)({
     type: 'contact',
     contact: feedE.id,
     blocking: false
   })
 
-  const [err3, follows3] = await run(botA.friends.get)({
+  const follows3 = await p(botA.friends.get)({
     source: feedD.id,
     dest: feedE.id
   })
-  t.error(err3)
+    .catch(t.error)
   // should not go back to following, after unblocking
   t.notOk(follows3)
 
@@ -163,24 +163,24 @@ tape('legacy blocking / unblocking works', async (t) => {
 tape('hops blocking / unblocking works', async (t) => {
   const feedF = botA.createFeed()
 
-  await run(botA.publish)({
+  await p(botA.publish)({
     type: 'contact',
     contact: feedF.id,
     blocking: true
   })
 
-  const [err, hops] = await run(botA.friends.hops)()
-  t.error(err)
+  const hops = await p(botA.friends.hops)()
+    .catch(t.error)
   t.equal(hops[feedF.id], -1)
 
-  await run(botA.publish)({
+  await p(botA.publish)({
     type: 'contact',
     contact: feedF.id,
     blocking: false
   })
 
-  const [err2, hops2] = await run(botA.friends.hops)()
-  t.error(err2)
+  const hops2 = await p(botA.friends.hops)()
+    .catch(t.error)
   t.equal(hops2[feedF.id], -2)
 
   t.end()
@@ -190,42 +190,42 @@ tape('hops blocking / unblocking works', async (t) => {
   const feedH = botA.createFeed()
   const feedI = botA.createFeed()
 
-  await run(botA.publish)({
+  await p(botA.publish)({
     type: 'contact',
     contact: feedH.id,
     following: true
   })
 
-  await run(feedH.publish)({
+  await p(feedH.publish)({
     type: 'contact',
     contact: feedI.id,
     following: true
   })
 
-  const [err, hops] = await run(botA.friends.hops)()
-  t.error(err)
+  const hops = await p(botA.friends.hops)()
+    .catch(t.error)
   t.equal(hops[feedH.id], 1)
   t.equal(hops[feedI.id], 2)
 
-  await run(botA.publish)({
+  await p(botA.publish)({
     type: 'contact',
     contact: feedI.id,
     blocking: true
   })
 
-  const [err2, hops2] = await run(botA.friends.hops)()
-  t.error(err2)
+  const hops2 = await p(botA.friends.hops)()
+    .catch(t.error)
   t.equal(hops2[feedH.id], 1)
   t.equal(hops2[feedI.id], -1)
 
-  await run(botA.publish)({
+  await p(botA.publish)({
     type: 'contact',
     contact: feedI.id,
     blocking: false
   })
 
-  const [err3, hops3] = await run(botA.friends.hops)()
-  t.error(err3)
+  const hops3 = await p(botA.friends.hops)()
+    .catch(t.error)
   t.equal(hops3[feedH.id], 1)
   t.equal(hops3[feedI.id], 2)
 
