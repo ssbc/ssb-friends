@@ -1,26 +1,13 @@
 const pull = require('pull-stream')
 
-module.exports = function replicationGlue(sbot, layered, legacy) {
+module.exports = function replicationGlue (sbot, layered, legacy) {
   // check for ssb-replicate or similar, but with a delay so other plugins have time to be loaded
   setImmediate(() => {
     if (!sbot.replicate) {
       throw new Error('ssb-friends expects a replicate plugin to be available')
     }
 
-    const follows = {
-      dev1: {
-        pataka: true
-      },
-      dev2: {
-        pataka: true
-      },
-      pataka: {
-        dev1: true,
-        dev2: true
-      }
-    }
-
-    function updateEdge(orig, dest, value) {
+    function updateEdge (orig, dest, value) {
       if (orig === sbot.id) sbot.replicate.request(dest, value !== false)
       if (dest !== sbot.id) sbot.replicate.block(orig, dest, value === false)
     }

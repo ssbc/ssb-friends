@@ -10,9 +10,9 @@ const bContent = Buffer.from('content')
 const bType = Buffer.from('type')
 const bContact = Buffer.from('contact')
 
-module.exports = function(createLayer) {
+module.exports = function (createLayer) {
   return class Friends extends Plugin {
-    constructor(log, dir) {
+    constructor (log, dir) {
       super(log, dir, 'contacts', 2, undefined, 'json')
       this.layer = createLayer('contacts')
       this.layer({})
@@ -34,12 +34,12 @@ module.exports = function(createLayer) {
       this.batchKeys = {} // key to index
     }
 
-    onFlush(cb) {
+    onFlush (cb) {
       this.batchKeys = {}
       cb()
     }
 
-    processRecord(record, seq) {
+    processRecord (record, seq) {
       const recBuffer = record.value
       if (!recBuffer) return // deleted
 
@@ -61,27 +61,29 @@ module.exports = function(createLayer) {
         const to = content.contact
 
         if (isFeed(author) && isFeed(to)) {
-          const value = content.blocking || content.flagged ? -1 :
-                content.following === true ? 1
-                : -2
+          const value = content.blocking || content.flagged
+            ? -1
+            : content.following === true
+              ? 1
+              : -2
 
           let updateFeeds = false
 
           let fromIndex = this.feeds.indexOf(author)
           if (fromIndex === -1) {
             this.feeds.push(author)
-            fromIndex = this.feeds.length -1
+            fromIndex = this.feeds.length - 1
             updateFeeds = true
           }
 
           let toIndex = this.feeds.indexOf(to)
           if (toIndex === -1) {
             this.feeds.push(to)
-            toIndex = this.feeds.length -1
+            toIndex = this.feeds.length - 1
             updateFeeds = true
           }
 
-          let fromValues = this.feedValues[fromIndex] || {}
+          const fromValues = this.feedValues[fromIndex] || {}
           fromValues[toIndex] = value
           this.feedValues[fromIndex] = fromValues
 
@@ -91,11 +93,10 @@ module.exports = function(createLayer) {
             value: fromValues
           }
 
-          let existingKeyIndex = this.batchKeys[fromIndex]
+          const existingKeyIndex = this.batchKeys[fromIndex]
           if (existingKeyIndex) {
             this.batch[existingKeyIndex] = batchValue
-          }
-          else {
+          } else {
             this.batch.push(batchValue)
             this.batchKeys[fromIndex] = this.batch.length - 1
           }
@@ -107,12 +108,12 @@ module.exports = function(createLayer) {
               value: this.feeds
             }
 
-            let existingFeedsIndex = this.batchKeys['feeds']
+            const existingFeedsIndex = this.batchKeys.feeds
             if (existingFeedsIndex) {
               this.batch[existingFeedsIndex] = feedsValue
             } else {
               this.batch.push(feedsValue)
-              this.batchKeys['feeds'] = this.batch.length - 1
+              this.batchKeys.feeds = this.batch.length - 1
             }
           }
 
@@ -121,7 +122,7 @@ module.exports = function(createLayer) {
       }
     }
 
-    onLoaded(cb) {
+    onLoaded (cb) {
       pull(
         pl.read(this.level, {
           valueEncoding: this.valueEncoding,
@@ -137,9 +138,8 @@ module.exports = function(createLayer) {
             }
           }
 
-          let result = {}
-          for (let i = 0; i < data.length; ++i)
-          {
+          const result = {}
+          for (let i = 0; i < data.length; ++i) {
             const relation = data[i]
 
             if (relation.key !== '\x00' && relation.key !== 'feeds') {
@@ -148,8 +148,8 @@ module.exports = function(createLayer) {
               const feedFollowStatus = result[feed] || {}
               const feedIndexValues = this.feedValues[feedIndex] || {}
 
-              let valueKeys = Object.keys(relation.value)
-              for (var v = 0; v < valueKeys.length; ++v) {
+              const valueKeys = Object.keys(relation.value)
+              for (let v = 0; v < valueKeys.length; ++v) {
                 const toIndex = valueKeys[v]
                 const to = this.feeds[toIndex]
                 const value = parseInt(relation.value[valueKeys[v]], 10)

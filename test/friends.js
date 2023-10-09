@@ -80,7 +80,7 @@ tape('createFriendStream - meta', (t) => {
         sort([
           { id: alice.id, hops: 0 },
           { id: bob.id, hops: 1 },
-          { id: carol.id, hops: 1 },
+          { id: carol.id, hops: 1 }
         ])
       )
 

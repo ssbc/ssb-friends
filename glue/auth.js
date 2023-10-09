@@ -1,4 +1,4 @@
-module.exports = function authGlue(sbot, isBlocking) {
+module.exports = function authGlue (sbot, isBlocking) {
   // opinion: do not authorize peers blocked by this node.
   sbot.auth.hook(function (fn, args) {
     const self = this

@@ -16,14 +16,14 @@ function liveFriends (ssbServer) {
     pull.drain((friend) => {
       if (friend.sync) return
       live[friend.id] = friend.hops
-    }),
+    })
   )
   return live
 }
 
 const dir = path.join(os.tmpdir(), 'friends-db2')
 
-function Server(opts = {}) {
+function Server (opts = {}) {
   return u.Server({
     db1: false,
     ...opts
@@ -32,7 +32,7 @@ function Server(opts = {}) {
 
 let state = validate.initial()
 
-function addMsg(db, keys, content) {
+function addMsg (db, keys, content) {
   state = validate.appendNew(state, null, keys, content, Date.now())
   const value = state.queue.shift().value
 
@@ -72,7 +72,6 @@ tape('db2 friends test', async (t) => {
   const hops = await p(sbot.friends.hops)()
     .catch(t.error)
   t.deepEqual(live, hops, 'live hops good')
-
 
   await p(sbot.close)()
     .catch(t.error)

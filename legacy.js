@@ -11,7 +11,7 @@ function createLog (message) {
   }
 }
 
-module.exports = function setupLegacy(layered) {
+module.exports = function setupLegacy (layered) {
   function mapGraph (g, fn) {
     const _g = {}
     for (const j in g) {
