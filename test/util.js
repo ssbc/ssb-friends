@@ -1,5 +1,10 @@
 const ref = require('ssb-ref')
 const Server = require('scuttle-testbot')
+const crypto = require('crypto')
+
+const caps = {
+  shs: crypto.randomBytes(32).toString('base64')
+}
 
 exports.Server = function Testbot (opts = {}) {
   if (opts.db1 === undefined) opts.db1 = true
@@ -7,7 +12,10 @@ exports.Server = function Testbot (opts = {}) {
   const stack = Server
 
   if (opts.db1) {
-    stack.use(require('ssb-replicate'))
+    stack
+      .use(require('ssb-replicate'))
+      .use(require('ssb-invite'))
+      .use(require('ssb-conn'))
 
     if (opts.tribes === true) {
       stack
@@ -23,6 +31,7 @@ exports.Server = function Testbot (opts = {}) {
 
   return stack({
     db1: true,
+    caps,
     ...opts
   })
 }
