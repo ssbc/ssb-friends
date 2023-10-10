@@ -1,5 +1,5 @@
 const tape = require('tape')
-const run = require('promisify-tuple')
+const { promisify: p } = require('util')
 const ssbKeys = require('ssb-keys')
 const pull = require('pull-stream')
 const u = require('./util')
@@ -34,25 +34,25 @@ tape('add friends, and retrieve all friends for a peer', async (t) => {
   const live = liveFriends(ssbServer)
 
   await Promise.all([
-    run(alice.add)({
+    p(alice.add)({
       type: 'contact',
       contact: bob.id,
       following: true
       // flagged: { reason: 'foo' }
     }),
-    run(alice.add)(u.follow(carol.id)),
-    run(bob.add)(u.follow(alice.id)),
-    run(bob.add)({
+    p(alice.add)(u.follow(carol.id)),
+    p(bob.add)(u.follow(alice.id)),
+    p(bob.add)({
       type: 'contact',
       contact: carol.id,
       following: false,
       flagged: true
     }),
-    run(carol.add)(u.follow(alice.id))
+    p(carol.add)(u.follow(alice.id))
   ])
 
-  const [err, hops] = await run(ssbServer.friends.hops)()
-  t.error(err)
+  const hops = await p(ssbServer.friends.hops)()
+    .catch(t.error)
   t.deepEqual(live, hops)
   t.end()
 })

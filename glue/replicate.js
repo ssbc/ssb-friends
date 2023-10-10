@@ -1,52 +1,91 @@
+/* eslint-disable brace-style */
 const pull = require('pull-stream')
+const pullFlatMap = require('pull-flatmap')
+const { promisify: p } = require('util')
 
-module.exports = function replicationGlue (sbot, layered, legacy) {
+module.exports = async function replicationGlue (sbot, layered, legacy) {
+  const maxHops = layered.max || 3
+  let isJumpStarting = false
+  let isClosing = false
+  let isInviteDancing = false
+
   // check for ssb-replicate or similar, but with a delay so other plugins have time to be loaded
-  setImmediate(() => {
-    if (!sbot.replicate) {
-      throw new Error('ssb-friends expects a replicate plugin to be available')
-    }
+  await p(setImmediate)()
+  if (!sbot.replicate) {
+    throw new Error('ssb-friends expects a replicate plugin to be available')
+  }
 
-    function updateEdge (orig, dest, value) {
-      if (orig === sbot.id) sbot.replicate.request(dest, value !== false)
-      if (dest !== sbot.id) sbot.replicate.block(orig, dest, value === false)
-    }
+  pull(
+    layered.hopStream({ live: true }),
+    pullFlatMap(update => Object.entries(update)),
+    pull.drain(([feedId, hops]) => {
+      // replicate
+      if (hops >= 0 && hops <= maxHops) {
+        // sbot.replicate.block(sbot.id, feedId, false)
+        sbot.replicate.request(feedId, true)
+        hackyConnJumpStart()
+      }
+      // block
+      else if (hops === -1) {
+        sbot.replicate.block(sbot.id, feedId, true)
+        // sbot.replicate.request(feedId, false)
+      }
+      // unfollow / unblock
+      else if (hops === -2) {
+        sbot.replicate.block(sbot.id, feedId, false)
+        sbot.replicate.request(feedId, false)
+      }
+      else {
+        console.error('ssb-friends/glue/replicate unknown state:', { feedId, hops })
+      }
+    })
+  )
 
-    sbot.replicate.request(sbot.id, true)
+  // 2023-10-10 mix
+  // we saw a problem where post invite acceptance, replication isn't happening till a restart
+  // this hack turns conn on and off, which is a crude way to stimulate replication!
+  async function hackyConnJumpStart () {
+    // dont't run if already running, or shutting down
+    if (isJumpStarting || isClosing) return
+    // don't run if not recently involved in an invite dance
+    if (!isInviteDancing) return
+    if (!sbot.conn) return
 
-    pull(
-      legacy.stream(),
-      pull.filter(contacts => !!contacts),
-      pull.drain((contacts) => {
-        if (contacts.from && contacts.to) {
-          updateEdge(contacts.from, contacts.to, contacts.value)
-        } else {
-          for (const from of Object.keys(contacts)) {
-            for (const to of Object.keys(contacts[from])) {
-              updateEdge(from, to, contacts[from][to])
+    isJumpStarting = true
 
-              // HACK 2023-06-21 mix
-              // this code is here to patch a problem where this function does not at all honour
-              // config.friends.hops
-              // This code below *hard codes* a transitive replication of 2 hops
-              //
-              // TODO
-              // - update this to honour hops
-              // - perhaps instead look at how this was ever working
-              //    - why would this stream produce two different shapes of data D:
-              //    - what changed that this used to work?
-              //        - what version was this change in?
-              if (from === sbot.id) {
-                const ourFollows = Object.keys(contacts[from]).filter(id => contacts[from][id])
-                const theirFollows = ourFollows.flatMap(id => {
-                  return Object.keys(contacts[id]).filter(id2 => contacts[id][id2])
-                })
-                theirFollows.forEach(id => updateEdge(from, id, true))
-              }
-            }
-          }
-        }
-      })
-    )
+    // wait a moment for ssb-invite to finish exchanges of messages
+    await p(setTimeout)(500)
+    if (isClosing) return
+    sbot.conn.stop()
+
+    // wait a moment for conn to shut down
+    await p(setTimeout)(500)
+    if (isClosing) return
+    sbot.conn.start()
+
+    isJumpStarting = false
+  }
+
+  sbot.close.hook(function (close, args) {
+    isClosing = true
+    close.apply(this, args)
   })
+
+  if (sbot.invite) {
+    const GRACE_PERIOD = 5000
+    sbot.invite.accept.hook(function (accept, args) {
+      isInviteDancing = true
+      setTimeout(() => {
+        isInviteDancing = false
+      }, GRACE_PERIOD)
+      accept.apply(this, args)
+    })
+    sbot.invite.use.hook(function (use, args) {
+      isInviteDancing = true
+      setTimeout(() => {
+        isInviteDancing = false
+      }, GRACE_PERIOD)
+      use.apply(this, args)
+    })
+  }
 }

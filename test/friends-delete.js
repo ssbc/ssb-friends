@@ -1,5 +1,5 @@
 const tape = require('tape')
-const run = require('promisify-tuple')
+const { promisify: p } = require('util')
 const ssbKeys = require('ssb-keys')
 const pull = require('pull-stream')
 const u = require('./util')
@@ -34,38 +34,38 @@ const live = liveFriends(ssbServer)
 
 tape('add and delete', async (t) => {
   await Promise.all([
-    run(alice.add)({
+    p(alice.add)({
       type: 'contact',
       contact: bob.id,
       following: true,
       flagged: true
     }),
-    run(alice.add)(u.follow(carol.id)),
-    run(bob.add)(u.follow(alice.id)),
-    run(bob.add)({
+    p(alice.add)(u.follow(carol.id)),
+    p(bob.add)(u.follow(alice.id)),
+    p(bob.add)({
       type: 'contact',
       contact: carol.id,
       following: false,
       flagged: { reason: 'foo' }
     }),
-    run(carol.add)(u.follow(alice.id)),
-    run(alice.add)({
+    p(carol.add)(u.follow(alice.id)),
+    p(alice.add)({
       type: 'contact',
       contact: carol.id,
       following: false,
       flagged: true
     }),
-    run(alice.add)({
+    p(alice.add)({
       type: 'contact',
       contact: bob.id,
       following: true,
       flagged: false
     }),
-    run(bob.add)(u.unfollow(carol.id))
+    p(bob.add)(u.unfollow(carol.id))
   ])
 
-  const [err, hops] = await run(ssbServer.friends.hops)()
-  t.error(err)
+  const hops = await p(ssbServer.friends.hops)()
+    .catch(t.error)
   t.deepEqual(live, hops)
   t.end()
 })

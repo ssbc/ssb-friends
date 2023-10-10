@@ -5,9 +5,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, master_4]
   pull_request:
-    branches: [master]
+    branches: [master, master_4]
 
 jobs:
   test:
@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [12.x, 14.x, 16.x]
+        node-version: [14.x, 16.x, 18.x]
 
     steps:
       - uses: actions/checkout@v2

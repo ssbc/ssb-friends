@@ -1,6 +1,6 @@
 const tape = require('tape')
 const ssbKeys = require('ssb-keys')
-const run = require('promisify-tuple')
+const { promisify: p } = require('util')
 const pull = require('pull-stream')
 const u = require('./util')
 
@@ -38,13 +38,13 @@ const live = liveFriends(ssbServer)
 
 tape('chain of friends', async (t) => {
   await Promise.all([
-    run(alice.add)(u.follow(bob.id)),
-    run(bob.add)(u.follow(carol.id)),
-    run(carol.add)(u.follow(dan.id))
+    p(alice.add)(u.follow(bob.id)),
+    p(bob.add)(u.follow(carol.id)),
+    p(carol.add)(u.follow(dan.id))
   ])
 
-  const [err, all] = await run(ssbServer.friends.hops)({ hops: 3 })
-  t.error(err)
+  const all = await p(ssbServer.friends.hops)({ hops: 3 })
+    .catch(t.error)
   const o = {}
 
   o[alice.id] = 0

@@ -32,6 +32,7 @@ exports.init = function (sbot, config) {
   if (!config.replicate) config.replicate = {}
   const max = config.friends.hops || config.replicate.hops || 3
   const layered = LayeredGraph({ max, start: sbot.id })
+  layered.max = max
 
   if (sbot.db) {
     sbot.db.registerIndex(db2Contacts(layered.createLayer))

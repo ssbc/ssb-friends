@@ -1,7 +1,7 @@
 const tape = require('tape')
 const gen = require('ssb-generate')
 const pull = require('pull-stream')
-const run = require('promisify-tuple')
+const { promisify: p } = require('util')
 const u = require('./util')
 
 const botA = u.Server({
@@ -36,8 +36,8 @@ tape('live follows works', async (t) => {
     })
   )
 
-  const [err, peers] = await run(gen.initialize)(botA, 10, 2)
-  t.error(err, 'initialize test data')
+  const peers = await p(gen.initialize)(botA, 10, 2)
+    .catch(err => t.error(err, 'initialize test data'))
 
   t.true(a.length >= 1, 'a.length === ' + a.length)
 
@@ -57,8 +57,8 @@ tape('live follows works', async (t) => {
     }
   })
 
-  const [err2, hops] = await run(botA.friends.hops)()
-  t.error(err2)
+  const hops = await p(botA.friends.hops)()
+    .catch(t.error)
   for (const k in notSeen) {
     console.log('Not Seen', k, hops[k])
   }
@@ -70,8 +70,8 @@ tape('live follows works', async (t) => {
   // t.ok(a.length >= b.length, '1 hops')
   // t.ok(c.length >= b.length, '2 hops')
 
-  const [err3] = await run(botA.close)()
-  t.error(err3)
+  await p(botA.close)()
+    .catch(t.error)
   t.end()
 })
 
