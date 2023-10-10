@@ -30,8 +30,10 @@ exports.Server = function Testbot (opts = {}) {
   stack.use(require('..'))
 
   return stack({
-    db1: true,
     caps,
+    allowPrivate: true,
+    host: '127.0.0.1',
+    db1: true,
     ...opts
   })
 }
