@@ -57,13 +57,15 @@ tape('listen to hopStream and stops replication of blocks', (t) => {
         return {
           request () {},
           block (orig, dest, bool) {
-            t.true(expected.length > 0, 'expected')
+            if (expected.length === 0) t.fail('no unexpeted blocks!')
+
             const [expectedDest, expectedBool] = expected.shift()
-            t.equals(orig, sbot.id, 'self feed id')
+            t.equals(orig, sbot.id, 'me blocking someone')
             t.equals(dest, expectedDest, 'blocked feed id matches')
             t.equals(bool, expectedBool, 'bool matches')
+
             if (expected.length === 1) {
-              sbot.publish(u.unblock(blockedKeys.id), (err, msg) => {
+              sbot.friends.block(blockedKeys.id, { state: false }, (err, msg) => {
                 t.error(err, 'no error when unblocking')
                 t.ok(msg, 'contact msg is truthy')
               })

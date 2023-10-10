@@ -31,8 +31,10 @@ module.exports = function setupLegacy (layered) {
 
   function toLegacyValue (v) {
     // follow and same-as are shown as follow
-    // -2 is unfollow, -1 is block.
-    return v >= 0 ? true : v === -2 ? null : v === -1 ? false : null
+    if (v >= 0) return true
+    else if (v === -2) return null // unfollow
+    else if (v === -1) return false // block
+    else return null
   }
 
   const logLegacy1 = createLog('ssb-friends: createFriendStream legacy api used')

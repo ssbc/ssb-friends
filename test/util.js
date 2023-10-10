@@ -27,6 +27,16 @@ exports.Server = function Testbot (opts = {}) {
   })
 }
 
+exports.Run = function Run (t) {
+  return function run (label, promise) {
+    return promise
+      .then(result => t.pass(label) || result)
+      .catch(err => t.error(err, label))
+  }
+}
+
+exports.replicate = Server.replicate
+
 exports.follow = function (id) {
   return {
     type: 'contact', contact: id, following: true
